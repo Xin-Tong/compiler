@@ -121,7 +121,8 @@ param_decl_tail		: "," param_decl param_decl_tail | ;
 
 /* Function Declarations */
 func_declarations	: func_decl func_declarations | func_decl;
-func_decl			: FUNCTION any_type id {string str($3); struct symbol* sym = Sym_Alloc(str, global_symbol, "LOCAL", "FUNCTION"); current_symbol = sym;} "(" param_decl_list ")" BN func_body END {current_symbol = current_symbol->father;};
+func_decl			: FUNCTION any_type id {string str($3); struct symbol* sym = Sym_Alloc(str, global_symbol, "LOCAL", "FUNCTION"); current_symbol = sym;} func_para BN func_body END {current_symbol = current_symbol->father;};
+func_para : "(" param_decl_list ")" | "(" ")" ;
 //Xin: above differece
 
 func_body			: decl stmt_list
@@ -186,16 +187,19 @@ expr_list_tail : ',' expr expr_list_tail
 
 
 /* Complex Statements and Condition */ 
-if_stmt				: IF {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" decl stmt_list else_part ENDIF {current_symbol = current_symbol->father;};
-else_part			: ELSE {current_symbol = current_symbol->father; stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} decl stmt_list | ;
+if_stmt				: IF {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" func_body else_part ENDIF {current_symbol = current_symbol->father;};
+else_part			: ELSE {current_symbol = current_symbol->father; stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} func_body | ;
 cond				: expr compop expr;
 compop				: "<" | ">" | "=" | NE | LE | GE;
 
 /* ECE 573 students use this version of do_while_stmt */
-while_stmt			: WHILE {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" decl aug_stmt_list ENDWHILE {current_symbol = current_symbol->father;};
-
+while_stmt			: WHILE {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" aug ENDWHILE {current_symbol = current_symbol->father;};
+aug : decl aug_stmt_list | aug_stmt_list;
+aug_stmt_list : aug_stmt_list aug_stmt  
+			  |
+			  ;
 /* CONTINUE and BREAK statements. ECE 573 students only */
-aug_stmt_list		: assign_stmt 
+aug_stmt		: assign_stmt 
 						|read_stmt 
 						|write_stmt 
 						|return_stmt
@@ -206,8 +210,8 @@ aug_stmt_list		: assign_stmt
 
 
 /* Augmented IF statements for ECE 573 students */ 
-aug_if_stmt			: IF {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" decl aug_stmt_list aug_else_part ENDIF {current_symbol = current_symbol->father;};
-aug_else_part		: ELSE {current_symbol = current_symbol->father; stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} decl aug_stmt_list aug_else_part | ;
+aug_if_stmt			: IF {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" aug aug_else_part ENDIF {current_symbol = current_symbol->father;};
+aug_else_part		: ELSE {current_symbol = current_symbol->father; stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} aug aug_else_part | ;
 
 %%
 
