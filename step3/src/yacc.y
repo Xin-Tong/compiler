@@ -87,13 +87,24 @@ main(int argc, char *argv[])
 %%
 /* Program */
 //program           : PROGRAM id BN pgm_body END {printf("Accepted!\n");};
-program				: PROGRAM id BN {string str("GLOBAL"); global_symbol = Sym_Alloc(str, NULL, "GLOBAL", "GLOBAL"); current_symbol = global_symbol;} pgm_body END {Print_Symbol(global_symbol);};
+program				: PROGRAM id BN {
+                        string str("GLOBAL"); 
+                        global_symbol = Sym_Alloc(str, NULL, "GLOBAL", "GLOBAL"); 
+                        current_symbol = global_symbol;} 
+                      pgm_body END {Print_Symbol(global_symbol);};
+                    //    printf("The type of variable a is %d.\n", Find_Type("a", global_symbol));};
 id					: IDENTIFIER;
-pgm_body			: decl func_declarations;
-decl				: string_decl decl | var_decl decl | ;
+pgm_body			: decl func_declarations
+					| decl
+					| func_declarations
+					|;
+decl				: string_decl decl 
+						| var_decl decl 
+						| var_decl
+						| string_decl;
 
 /* Global String Declaration */
-string_decl			: STRING id FZ str ";" {ProcessString(string($2), string($4), current_symbol);};
+string_decl         : STRING id FZ str ";" {ProcessString(string($2), string($4), current_symbol);};
 str					: STRINGLITERAL;
 
 /* Variable Declaration */
@@ -104,28 +115,41 @@ id_list				: id id_tail;
 id_tail				: "," id id_tail | ;
 
 /* Function Paramater List */
-param_decl_list		: param_decl param_decl_tail | ;
+param_decl_list		: param_decl param_decl_tail ;
 param_decl			: var_type id {string stype($1); string sid($2); size_t blank_pos = stype.find(" "); stype.erase(blank_pos); trim(stype); trim(sid); Variable_Add(current_symbol, sid, stype, "NULL"); };
 param_decl_tail		: "," param_decl param_decl_tail | ;
 
 /* Function Declarations */
-func_declarations	: func_decl func_declarations | ;
+func_declarations	: func_decl func_declarations | func_decl;
 func_decl			: FUNCTION any_type id {string str($3); struct symbol* sym = Sym_Alloc(str, global_symbol, "LOCAL", "FUNCTION"); current_symbol = sym;} "(" param_decl_list ")" BN func_body END {current_symbol = current_symbol->father;};
-func_body			: decl stmt_list ;
+//Xin: above differece
+
+func_body			: decl stmt_list
+					| decl
+					| stmt_list
+					|;
 
 /* Statement List */
-stmt_list			: stmt stmt_list | ;
-stmt				: base_stmt | if_stmt | while_stmt;
-base_stmt			: assign_stmt | read_stmt | write_stmt | return_stmt;
+stmt_list			: stmt stmt_list
+                      | read_stmt stmt_list
+                      | write_stmt stmt_list
+                      | stmt
+                      | read_stmt
+                      | write_stmt;
+
+stmt				:  assign_stmt
+                        | return_stmt
+                        | if_stmt 
+                        | while_stmt;
 
 /* Basic Statements */
-assign_stmt			: assign_expr ";";
-assign_expr			: id FZ expr;
+assign_stmt			: id FZ expr ";";
 read_stmt			: READ "(" id_list ")" ";";
 write_stmt			: WRITE "(" id_list ")" ";";
 return_stmt			: RETURN expr ";";
 
 /* Expressions */
+/*
 expr				: expr_prefix factor;
 expr_prefix			: expr_prefix factor addop | ;
 factor				: factor_prefix postfix_expr;
@@ -137,6 +161,29 @@ expr_list_tail		: "," expr expr_list_tail | ;
 primary				: "(" expr ")" | id | INTLITERAL | FLOATLITERAL;
 addop				: "+" | "-";
 mulop				: "*" | "/";
+*/
+
+expr : expr '+' factor 
+	 | expr '-' factor 
+	 | factor 
+	 ;
+factor : factor '*' postfix_expr 
+	   | factor '/' postfix_expr 
+	   | postfix_expr 
+	   ;
+postfix_expr :  '(' expr ')' 
+				| id 
+				| INTLITERAL  
+				| FLOATLITERAL 
+				| id '(' expr_list ')' 
+				| id '(' ')' 				
+				;
+expr_list : expr expr_list_tail  ;
+expr_list_tail : ',' expr expr_list_tail 
+			   | 
+			   ;
+			   
+
 
 /* Complex Statements and Condition */ 
 if_stmt				: IF {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" decl stmt_list else_part ENDIF {current_symbol = current_symbol->father;};
@@ -148,8 +195,15 @@ compop				: "<" | ">" | "=" | NE | LE | GE;
 while_stmt			: WHILE {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" decl aug_stmt_list ENDWHILE {current_symbol = current_symbol->father;};
 
 /* CONTINUE and BREAK statements. ECE 573 students only */
-aug_stmt_list		: aug_stmt aug_stmt_list | ;
-aug_stmt			: base_stmt | aug_if_stmt | while_stmt | CONTINUE";" | BREAK";";
+aug_stmt_list		: assign_stmt 
+						|read_stmt 
+						|write_stmt 
+						|return_stmt
+						|aug_if_stmt  
+						|while_stmt  
+						|CONTINUE";"  
+						|BREAK";" ;
+
 
 /* Augmented IF statements for ECE 573 students */ 
 aug_if_stmt			: IF {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" decl aug_stmt_list aug_else_part ENDIF {current_symbol = current_symbol->father;};
