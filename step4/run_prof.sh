@@ -1,7 +1,7 @@
 #! /bin/bash
 
 i=1
-while [ $i -le 22 ]
+while [ $i -le 3 ]
 do
     echo "testcase: $i"
     inputfilename="/home/min/a/liu1274/Documents/input/test$i.micro"

@@ -1,4 +1,5 @@
 %{
+#include "../src/ast.h"
 #include "y.tab.h"
 #include <math.h>
 #include <stdio.h>
@@ -13,11 +14,10 @@ ID       [a-z][a-z0-9]*
 
 {DIGIT}+  {yylval.number=atoi(yytext); return INTLITERAL;}
 
-{DIGIT}+"."{DIGIT}*  {yylval.ft=atoi(yytext); return FLOATLITERAL;}
+{DIGIT}+"."{DIGIT}*  {yylval.ft=atof(yytext); return FLOATLITERAL;}
 
-"+"|"-"|"*"|"/"|"<"|">"|"("|")"|"="|";"|","|"["|"]"|"{"|"}" return *yytext;
 
-":="	return FZ;
+":="	{yylval.cstr = yytext; return FZ;}
 ">="	return GE;
 "<="	return LE;
 "=="	return EQ;
@@ -25,6 +25,8 @@ ID       [a-z][a-z0-9]*
 BEGIN	return BN;
 
 \"[^\"]*\"      {yylval.cstr=strdup(yytext);return STRINGLITERAL;}
+
+"+"|"-"|"*"|"/"|"<"|">"|"("|")"|"="|";"|","|"["|"]"|"{"|"}" return *yytext;
 
 PROGRAM		return PROGRAM;
 END			return END;
@@ -44,7 +46,7 @@ VOID		{yylval.cstr = yytext; return VOID;}
 STRING		{yylval.cstr = yytext; return STRING;}
 FLOAT		{yylval.cstr = yytext; return FLOAT;}
 
-(_|[a-zA-Z])(_|[a-zA-z]|[0-9])* {yylval.cstr=strdup(yytext);return IDENTIFIER;}
+(_|[a-zA-Z])(_|[a-zA-z]|[0-9])* {yylval.cstr=yytext;return IDENTIFIER;}
 
 (-)(-).*        /*printf("byebye!\n");*/
 

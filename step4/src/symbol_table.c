@@ -1,21 +1,5 @@
 #include "symbol_table.h"
 
-//TO find the type of input, if it is INT return 0, FLOAT return 1
-int Find_Type(string name, struct symbol* global_symbol){
-    if(global_symbol == NULL){
-        return -1;
-    }
-    string str_type;
-    vector<struct variable*>::iterator iter;
-    for(iter = global_symbol->var.begin(); iter != global_symbol->var.end(); iter++){
-        str_type = (*iter)->type;
-        if(name == (*iter)->name){
-            if(str_type == "INT") return 0;
-            else if(str_type == "FLOAT") return 1; 
-        }
-    }
-}
-
 bool Find_Variable(string _name, struct symbol* _psym)
 {
 	if(_psym == NULL)
@@ -153,8 +137,60 @@ void Print_Symbol(struct symbol* _psym)
     }   
 }
 
+void str2pchar(string _str, char* _pchar)
+{
+	int len = _str.length();
+	_pchar = (char*)malloc((len+1)*sizeof(char));
+	_str.copy(_pchar, len, 0);
+	_pchar[len] = 0;
+}
 
+void IRCode_Add(string _str, struct ircode* _ir)
+{
+	struct ircode* temp_ir = (struct ircode*) malloc(sizeof(struct ircode));
+	str2pchar(_str, temp_ir->content);
+	temp_ir->next = NULL;
+	if(_ir != NULL)
+	{
+		_ir->next = temp_ir;
+	}
+	_ir = temp_ir;
+}
 
+void Print_Code(struct ircode* _root, struct ircode* _tinyroot, struct symbol* _psym)
+{
+	printf(";IR code\n");
+	printf(";LABEL main\n");
+	printf(";LINK\n");
+	struct ircode* temp_ir = _root;
+	while(temp_ir != NULL)
+	{
+		printf(";%s\n", temp_ir->content);
+		temp_ir = temp_ir->next;
+	}
+	printf(";RET\n");
+	printf(";tiny code\n");
+	string s_type;
+	vector<variable*>::iterator iter;
+	for(iter = _psym->var.begin(); iter != _psym->var.end(); iter ++)
+	{
+		s_type = (*iter)->type;
+        if (s_type == "INT" || s_type == "FLOAT")
+        {
+	        printf("var %s\n", (*iter)->name);
+        }
+        else
+        {
+            printf("str %s %s\n", (*iter)->name, (*iter)->value);
+        }
+	}
+	temp_ir = _tinyroot;
+	while(temp_ir != NULL)
+	{
+		printf(";%s\n", temp_ir->content);
+		temp_ir = temp_ir->next;
+	}
+}
 
 
 
