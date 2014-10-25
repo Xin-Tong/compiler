@@ -46,9 +46,9 @@ main(int argc, char *argv[])
 
 %union
 {
-    int number;
+    	int number;
 	float ft;
-    char * cstr;
+    	char * cstr;
 	ExpressionNode *pExpNode;
 	ExpressionNodeList *pExpNodeList;
 	AssignStatement* pAssign;

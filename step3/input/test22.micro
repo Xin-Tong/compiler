@@ -1,0 +1,39 @@
+PROGRAM sqrt
+BEGIN
+
+	STRING dummy := "abcde";  --This is dummy to satisfy the grammar
+
+     INT i, j, iprime;
+     
+	FUNCTION VOID main()
+	BEGIN
+	     INT iprime;
+
+		i := 0;		
+		iprime := 0;
+		j := 0;
+		result := 0;
+		
+		WHILE (i < 100)
+		     INT jprime;
+		
+		     jprime := j;
+		     i := i + 1;
+		     IF (i > 69)
+		          CONTINUE;
+		     ENDIF
+		     iprime := iprime + 1;
+		     WHILE (jprime < 100)
+		          IF (jprime > 49)
+		               BREAK;
+		          ENDIF
+		          jprime := j + 1;
+	               result := result + 1;
+		     ENDWHILE
+		ENDWHILE
+
+		WRITE (result);
+		WRITE (j);
+		WRITE (i);
+	END
+END

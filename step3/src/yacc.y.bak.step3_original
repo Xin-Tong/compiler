@@ -1,0 +1,195 @@
+%{
+#include <stdio.h>
+#include <string.h>
+#include <algorithm>
+#include <sstream>
+#include <iostream>
+#include "../src/symbol_table.h"
+extern FILE *yyin;
+using namespace std;
+
+struct symbol* global_symbol = NULL;
+int global_block_num = 1;
+struct symbol* current_symbol = NULL;
+
+void trim(string &_str);
+void ProcessVar(string s1, string s2, struct symbol* _psym);
+void ProcessString(string s1, string s2, struct symbol* _psym);
+
+int yylex();
+
+void yyerror(const char *str)
+{
+    fprintf(stderr,"Not accepted\n");
+}
+
+int yywrap()
+{
+    return 1;
+}
+
+main(int argc, char *argv[])
+{
+    FILE *fp=fopen(argv[1], "r");
+    yyin = fp;
+    yyparse();
+}
+
+%}
+
+%union
+{
+    int number;
+	float ft;
+    char * cstr;
+}
+
+%token <number> STATE
+%token <number> NUMBER
+%token <string> WORD
+
+%token GE
+%token LE
+%token EQ
+%token NE
+%token FZ
+
+%token INTLITERAL
+%token FLOATLITERAL 
+%token OPERATOR 
+%token <cstr>STRINGLITERAL 
+%token KEYWORD 
+%token <cstr>IDENTIFIER
+%token PROGRAM 
+%token BN 
+%token END 
+%token FUNCTION 
+%token READ 
+%token WRITE 
+%token IF 
+%token ELSE 
+%token ENDIF 
+%token WHILE 
+%token ENDWHILE 
+%token CONTINUE 
+%token BREAK 
+%token RETURN 
+%token <cstr> INT 
+%token <cstr> VOID 
+%token <cstr> STRING 
+%token <cstr> FLOAT
+
+%type <cstr> id
+%type <cstr> str
+%type <cstr> var_type
+%type <cstr> id_list
+
+%%
+/* Program */
+//program           : PROGRAM id BN pgm_body END {printf("Accepted!\n");};
+program				: PROGRAM id BN {string str("GLOBAL"); global_symbol = Sym_Alloc(str, NULL, "GLOBAL", "GLOBAL"); current_symbol = global_symbol;} pgm_body END {Print_Symbol(global_symbol);};
+id					: IDENTIFIER;
+pgm_body			: decl func_declarations;
+decl				: string_decl decl | var_decl decl | ;
+
+/* Global String Declaration */
+string_decl			: STRING id FZ str ";" {ProcessString(string($2), string($4), current_symbol);};
+str					: STRINGLITERAL;
+
+/* Variable Declaration */
+var_decl			: var_type id_list ";" {ProcessVar(string($1), current_symbol);};
+var_type			: FLOAT | INT;
+any_type			: var_type | VOID; 
+id_list				: id id_tail;
+id_tail				: "," id id_tail | ;
+
+/* Function Paramater List */
+param_decl_list		: param_decl param_decl_tail | ;
+param_decl			: var_type id {string stype($1); string sid($2); size_t blank_pos = stype.find(" "); stype.erase(blank_pos); trim(stype); trim(sid); Variable_Add(current_symbol, sid, stype, "NULL"); };
+param_decl_tail		: "," param_decl param_decl_tail | ;
+
+/* Function Declarations */
+func_declarations	: func_decl func_declarations | ;
+func_decl			: FUNCTION any_type id {string str($3); struct symbol* sym = Sym_Alloc(str, global_symbol, "LOCAL", "FUNCTION"); current_symbol = sym;} "(" param_decl_list ")" BN func_body END {current_symbol = current_symbol->father;};
+func_body			: decl stmt_list ;
+
+/* Statement List */
+stmt_list			: stmt stmt_list | ;
+stmt				: base_stmt | if_stmt | while_stmt;
+base_stmt			: assign_stmt | read_stmt | write_stmt | return_stmt;
+
+/* Basic Statements */
+assign_stmt			: assign_expr ";";
+assign_expr			: id FZ expr;
+read_stmt			: READ "(" id_list ")" ";";
+write_stmt			: WRITE "(" id_list ")" ";";
+return_stmt			: RETURN expr ";";
+
+/* Expressions */
+expr				: expr_prefix factor;
+expr_prefix			: expr_prefix factor addop | ;
+factor				: factor_prefix postfix_expr;
+factor_prefix		: factor_prefix postfix_expr mulop | ;
+postfix_expr		: primary | call_expr;
+call_expr			: id "(" expr_list ")";
+expr_list			: expr expr_list_tail | ;
+expr_list_tail		: "," expr expr_list_tail | ;
+primary				: "(" expr ")" | id | INTLITERAL | FLOATLITERAL;
+addop				: "+" | "-";
+mulop				: "*" | "/";
+
+/* Complex Statements and Condition */ 
+if_stmt				: IF {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" decl stmt_list else_part ENDIF {current_symbol = current_symbol->father;};
+else_part			: ELSE {current_symbol = current_symbol->father; stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} decl stmt_list | ;
+cond				: expr compop expr;
+compop				: "<" | ">" | "=" | NE | LE | GE;
+
+/* ECE 573 students use this version of do_while_stmt */
+while_stmt			: WHILE {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" decl aug_stmt_list ENDWHILE {current_symbol = current_symbol->father;};
+
+/* CONTINUE and BREAK statements. ECE 573 students only */
+aug_stmt_list		: aug_stmt aug_stmt_list | ;
+aug_stmt			: base_stmt | aug_if_stmt | while_stmt | CONTINUE";" | BREAK";";
+
+/* Augmented IF statements for ECE 573 students */ 
+aug_if_stmt			: IF {stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} "(" cond ")" decl aug_stmt_list aug_else_part ENDIF {current_symbol = current_symbol->father;};
+aug_else_part		: ELSE {current_symbol = current_symbol->father; stringstream ss; ss << global_block_num; global_block_num++; string str; ss>>str; str = "BLOCK " + str; struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); current_symbol = sym;} decl aug_stmt_list aug_else_part | ;
+
+%%
+
+void trim(string &_str)
+{
+    if (!_str.empty())
+    {
+        _str.erase(0, _str.find_first_not_of(" "));
+        _str.erase(_str.find_last_not_of(" ") + 1);
+    }
+}
+
+void ProcessVar(string s1, struct symbol* _psym)
+{  
+    std::size_t found_first_whitespace = s1.find(" ");
+    string str_type = s1.substr(0, found_first_whitespace);
+    std::size_t found = s1.rfind(";");
+    s1.replace(found, 2, ",,"); 
+    string s2 = s1.substr(found_first_whitespace+1, s1.length());
+    std::size_t found_col = s2.find(",");
+    do
+	{       
+		string str_temp = s2.substr(0,found_col);
+        trim(str_temp);  //remove the whitespace
+//		cout<<str_temp<<"  "<<str_type<<endl;
+        Variable_Add(_psym, str_temp, str_type, "NULL");
+        s2 = s2.substr(found_col+1);
+        found_col = s2.find(",");
+	}
+    while(found_col != s2.rfind(","));
+}
+
+void ProcessString(string s1, string s2, struct symbol* _psym)
+{
+    trim(s1);
+    trim(s2);
+    Variable_Add(_psym, s1, "STRING", s2);
+}
+

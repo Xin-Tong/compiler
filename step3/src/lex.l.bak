@@ -44,7 +44,7 @@ VOID		{yylval.cstr = yytext; return VOID;}
 STRING		{yylval.cstr = yytext; return STRING;}
 FLOAT		{yylval.cstr = yytext; return FLOAT;}
 
-(_|[a-zA-Z])(_|[a-zA-z]|[0-9])* {yylval.cstr=yytext;return IDENTIFIER;}
+(_|[a-zA-Z])(_|[a-zA-z]|[0-9])* {yylval.cstr=strdup(yytext);return IDENTIFIER;}
 
 (-)(-).*        /*printf("byebye!\n");*/
 
