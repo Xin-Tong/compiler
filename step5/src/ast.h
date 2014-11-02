@@ -371,6 +371,14 @@ public:
 	IfStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
 };
 
+class WhileStatement : public Statement
+{
+public:
+    ExpressionNode *pExpNode;
+    WhileStatement() {}
+    WhileStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
+};
+
 class AssignStatement : public Statement
 {
 public:

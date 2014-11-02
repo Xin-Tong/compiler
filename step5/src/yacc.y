@@ -62,7 +62,7 @@ main(int argc, char *argv[])
 	Global *pGlobal;
 	//Xin
 	//else_stmt *else_st;
-	//dowhile_stmt *dw_st;
+	WhileStatement *pWhile;
 	//cond_node *conode;
     
 }
@@ -344,7 +344,10 @@ while_stmt			: WHILE
 						str = "BLOCK " + str; 
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
-					} "(" cond ")" aug ENDWHILE {current_symbol = current_symbol->father;};
+					} "(" cond ")" aug ENDWHILE
+                     {
+                        $$ = new WhileStatement();
+                        current_symbol = current_symbol->father;};
 aug					: decl aug_stmt_list | aug_stmt_list;
 aug_stmt_list		: aug_stmt_list aug_stmt
 					| aug_stmt_list read_stmt
@@ -382,7 +385,7 @@ aug_else_part		: ELSE
 						str = "BLOCK " + str; 
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
-					} '(' cond ')' aug aug_else_part 
+					} aug aug_else_part 
 					| 
 					;
 
