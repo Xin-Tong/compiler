@@ -14,6 +14,7 @@ int global_block_num = 1;
 struct symbol* current_symbol = NULL;
 Global *root = NULL;
 int global_temp_reg_count = 1;
+int global_label_count = 1;
 
 void trim(string &_str);
 void ProcessVar(string s1, string s2, struct symbol* _psym);
@@ -46,12 +47,13 @@ main(int argc, char *argv[])
 
 %union
 {
-    	int number;
+    int number;
 	float ft;
-    	char * cstr;
+    char * cstr;
 	ExpressionNode *pExpNode;
 	ExpressionNodeList *pExpNodeList;
 	AssignStatement* pAssign;
+	IfStatement* pIf;
 	Statement *pState;
 	ReturnStatement *pRtnState;
 	list<Statement*> *pStateList;
@@ -64,14 +66,14 @@ main(int argc, char *argv[])
 %token <number> NUMBER
 %token <string> WORD
 
-%token GE
-%token LE
-%token EQ
-%token NE
+%token <cstr> GE
+%token <cstr> LE
+%token <cstr> EQ
+%token <cstr> NE
 %token FZ
 
-%token <number> INTLITERAL
-%token <ft> FLOATLITERAL 
+%token <cstr> INTLITERAL
+%token <cstr> FLOATLITERAL 
 %token OPERATOR 
 %token <cstr>STRINGLITERAL 
 %token KEYWORD 
@@ -103,6 +105,8 @@ main(int argc, char *argv[])
 %type <pExpNode> expr
 %type <pExpNode> factor
 %type <pExpNode> postfix_expr
+%type <pExpNode> cond
+%type <cstr> compop
 %type <pStateList> stmt_list
 %type <pFunc> func_decl
 %type <pFuncList> func_declarations 
@@ -222,7 +226,7 @@ stmt_list			: stmt stmt_list {$2->push_front($1); $$ = $2;}
 
 stmt				: assign_stmt {$$ = $1;}
                     | return_stmt {$$ = $1;}
-                    | if_stmt {$$ = $1;}
+                    | if_stmt {$$ = $1;} 
                     | while_stmt;
 
 /* Basic Statements */
@@ -299,7 +303,7 @@ if_stmt				: IF
 						current_symbol = sym;
 					} "(" cond ")" func_body else_part ENDIF 
 					{
-						$$ = new IfStatement();						
+						$$ = new IfStatement();
 						current_symbol = current_symbol->father;
 					};
 else_part			: ELSE 
@@ -314,8 +318,13 @@ else_part			: ELSE
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
 					} func_body | ;
-cond				: expr compop expr;
-compop				: "<" | ">" | "=" | NE | LE | GE;
+cond				: expr compop expr {$$ = new ComprExpression($1, $2, $3);};
+compop				: "<" {char str[] = "<"; $$ = str;} 
+					| ">" {char str[] = ">"; $$ = str;}
+					| "=" {char str[] = "=="; $$ = str;}
+					| NE  {char str[] = "!="; $$ = str;}
+					| LE  {char str[] = "<="; $$ = str;}
+					| GE  {char str[] = ">="; $$ = str;};
 
 /* ECE 573 students use this version of do_while_stmt */
 while_stmt			: WHILE 

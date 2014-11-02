@@ -11,6 +11,7 @@
 using namespace std;
 
 extern int global_temp_reg_count;
+extern int global_label_count;
 
 class IRNode
 {
@@ -26,12 +27,22 @@ public:
 		str = "$T" + str;
 		return str;
 	}
+	static string get_label()
+	{
+		stringstream ss;
+		ss << global_label_count;
+		global_label_count ++;
+		string str;
+		ss >> str;
+		str = "label" + str;
+		return str;
+	}
 };
 
 class ExpressionNode
 {
 public:
-	float val;
+	string val;
 	string type;
 	IRNode ir;
 	bool isNum;
@@ -50,7 +61,7 @@ public:
 		ir.op3 = _exp->ir.op3;
 		isNum = false;
 	}
-	ExpressionNode(float _val, string _type)
+	ExpressionNode(string _val, string _type)
 	{
 		val = _val;
 		type = _type;
@@ -81,10 +92,6 @@ public:
 //		printf("move %f %s\n", val, str.c_str());
 		cout << "move " << val << " " << str << endl;
 	}
-	virtual float calculate()
-	{
-		return val;
-	}
 };
 
 class IDNode: public ExpressionNode
@@ -110,6 +117,94 @@ class ExpressionNodeList
 public:
 	list<ExpressionNode*> *pExpNodes;
 	ExpressionNodeList(list<ExpressionNode*> *_pExpNodeList) : pExpNodes(_pExpNodeList) {}
+};
+
+class CompareNode: public ExpressionNode
+{
+public:
+    ExpressionNode *left;
+	ExpressionNode *right;
+    string cmptr;
+    CompareNode(ExpressionNode* _left, string _cmptr, ExpressionNode* _right) : left(_left), cmptr(_cmptr), right(_right)
+    {
+        type = left->type;
+    }
+    
+    virtual string GenIR()
+    {
+        if (type == "INT")
+        {
+            if (cmptr == ">")
+            {
+                ir.opcode = "LEI";
+            }
+            else if (cmptr == ">=")
+            {
+                ir.opcode = "LTI";
+            }
+            else if (cmptr == "<")
+            {
+                ir.opcode = "GEI";
+            }
+            else if (cmptr == "<=")
+            {
+                ir.opcode = "GTI";
+            }
+            else if (cmptr == "==")
+            {
+                ir.opcode = "NEI";
+            }
+            else if (cmptr == "!=")
+            {
+                ir.opcode = "EQI";
+            }
+        }
+        else if (type == "FLOAT")
+        {
+            if (cmptr == ">")
+            {
+                ir.opcode = "LEF";
+            }
+            else if (cmptr == ">=")
+            {
+                ir.opcode = "LTF";
+            }
+            else if (cmptr == "<")
+            {
+                ir.opcode = "GEF";
+            }
+            else if (cmptr == "<=")
+            {
+                ir.opcode = "GTF";
+            }
+            else if (cmptr == "==")
+            {
+                ir.opcode = "NEF";
+            }
+            else if (cmptr == "!=")
+            {
+                ir.opcode = "EQF";
+            }
+        }
+        
+        ir.op1 = left->GenIR();
+        ir.op2 = right->GenIR();
+        ir.op3 = ir.get_label();
+        
+        return ir.op3;
+    }
+    
+    virtual void PrintIR()
+    {
+        left->PrintIR();
+        right->PrintIR();
+        printf(";%s %s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op2.c_str(), ir.op3.c_str());
+    }
+    
+    virtual void PrintTiny()
+    {
+        
+    }
 };
 
 class OperatorNode: public ExpressionNode
@@ -261,19 +356,19 @@ public:
 	virtual void PrintTiny() {}
 };
 
+class ReturnStatement : public Statement
+{
+public:
+	ExpressionNode *pExpNode;
+	ReturnStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
+};
+
 class IfStatement : public Statement
 {
 public:
 	ExpressionNode *pExpNode;
 	IfStatement() {}
 	IfStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
-};
-
-class ReturnStatement : public Statement
-{
-public:
-	ExpressionNode *pExpNode;
-	ReturnStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
 };
 
 class AssignStatement : public Statement

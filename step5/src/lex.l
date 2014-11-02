@@ -12,16 +12,16 @@ ID       [a-z][a-z0-9]*
 
 %%
 
-{DIGIT}+  {yylval.number=atoi(yytext); return INTLITERAL;}
+{DIGIT}+  {yylval.cstr=yytext; return INTLITERAL;}
 
-{DIGIT}+"."{DIGIT}*  {yylval.ft=atof(yytext); return FLOATLITERAL;}
+{DIGIT}+"."{DIGIT}*  {yylval.cstr=yytext; return FLOATLITERAL;}
 
 
 ":="	{yylval.cstr = yytext; return FZ;}
-">="	return GE;
-"<="	return LE;
-"=="	return EQ;
-"!="	return NE;
+">="	{yylval.cstr = yytext; return GE;}
+"<="	{yylval.cstr = yytext; return LE;}
+"=="	{yylval.cstr = yytext; return EQ;}
+"!="	{yylval.cstr = yytext; return NE;}
 BEGIN	return BN;
 
 \"[^\"]*\"      {yylval.cstr=strdup(yytext);return STRINGLITERAL;}
