@@ -60,6 +60,11 @@ main(int argc, char *argv[])
 	Function *pFunc;
 	list<Function*> *pFuncList;
 	Global *pGlobal;
+	//Xin
+	//else_stmt *else_st;
+	//dowhile_stmt *dw_st;
+	//cond_node *conode;
+    
 }
 
 %token <number> STATE
@@ -105,8 +110,6 @@ main(int argc, char *argv[])
 %type <pExpNode> expr
 %type <pExpNode> factor
 %type <pExpNode> postfix_expr
-%type <pExpNode> cond
-%type <cstr> compop
 %type <pStateList> stmt_list
 %type <pFunc> func_decl
 %type <pFuncList> func_declarations 
@@ -122,6 +125,10 @@ main(int argc, char *argv[])
 %type <pState> while_stmt
 %type <pGlobal> program
 %type <pFuncList> pgm_body
+//Xin
+
+
+
 
 %%
 /* Program */
@@ -227,7 +234,8 @@ stmt_list			: stmt stmt_list {$2->push_front($1); $$ = $2;}
 stmt				: assign_stmt {$$ = $1;}
                     | return_stmt {$$ = $1;}
                     | if_stmt {$$ = $1;} 
-                    | while_stmt;
+                    | while_stmt { $$ = $1;}
+					;
 
 /* Basic Statements */
 assign_stmt			: id FZ expr ";" 
@@ -304,7 +312,7 @@ if_stmt				: IF
 					} "(" cond ")" func_body else_part ENDIF 
 					{
 						$$ = new IfStatement();
-						current_symbol = current_symbol->father;
+                        current_symbol = current_symbol->father;
 					};
 else_part			: ELSE 
 					{
@@ -318,13 +326,12 @@ else_part			: ELSE
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
 					} func_body | ;
-cond				: expr compop expr {$$ = new ComprExpression($1, $2, $3);};
-compop				: "<" {char str[] = "<"; $$ = str;} 
-					| ">" {char str[] = ">"; $$ = str;}
-					| "=" {char str[] = "=="; $$ = str;}
-					| NE  {char str[] = "!="; $$ = str;}
-					| LE  {char str[] = "<="; $$ = str;}
-					| GE  {char str[] = ">="; $$ = str;};
+cond				: expr '<' expr
+					| expr '>' expr
+					| expr '=' expr
+					| expr NE expr
+					| expr LE expr
+					| expr GE expr;
 
 /* ECE 573 students use this version of do_while_stmt */
 while_stmt			: WHILE 
@@ -339,17 +346,18 @@ while_stmt			: WHILE
 						current_symbol = sym;
 					} "(" cond ")" aug ENDWHILE {current_symbol = current_symbol->father;};
 aug					: decl aug_stmt_list | aug_stmt_list;
-aug_stmt_list		: aug_stmt_list aug_stmt  
+aug_stmt_list		: aug_stmt_list aug_stmt
+					| aug_stmt_list read_stmt
+					| aug_stmt_list write_stmt
 					| ;
 /* CONTINUE and BREAK statements. ECE 573 students only */
-aug_stmt			: assign_stmt 
-					| read_stmt 
-					| write_stmt 
+aug_stmt			: assign_stmt  
 					| return_stmt
 					| aug_if_stmt  
 					| while_stmt  
 					| CONTINUE ";"  
-					| BREAK";" ;
+					| BREAK";" 
+					;
 
 
 /* Augmented IF statements for ECE 573 students */ 
@@ -374,7 +382,9 @@ aug_else_part		: ELSE
 						str = "BLOCK " + str; 
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
-					} aug aug_else_part | ;
+					} '(' cond ')' aug aug_else_part 
+					| 
+					;
 
 %%
 
