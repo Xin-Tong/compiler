@@ -125,6 +125,9 @@ main(int argc, char *argv[])
 %type <pState> while_stmt
 %type <pGlobal> program
 %type <pFuncList> pgm_body
+%type <pExpNode> cond
+%type <cstr> compop
+%type <pStateList> else_part 
 //Xin
 
 
@@ -311,7 +314,7 @@ if_stmt				: IF
 						current_symbol = sym;
 					} "(" cond ")" func_body else_part ENDIF 
 					{
-						$$ = new IfStatement();
+						$$ = new IfStatement($4, $6, $7);
                         current_symbol = current_symbol->father;
 					};
 else_part			: ELSE 
@@ -326,12 +329,13 @@ else_part			: ELSE
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
 					} func_body | ;
-cond				: expr '<' expr
-					| expr '>' expr
-					| expr '=' expr
-					| expr NE expr
-					| expr LE expr
-					| expr GE expr;
+cond				: expr '<' expr {$$ = new CompareNode($1, "<", $3);}
+					| expr '>' expr {$$ = new CompareNode($1, ">", $3);}
+					| expr '=' expr {$$ = new CompareNode($1, "=", $3);}
+					| expr NE expr {$$ = new CompareNode($1, "!=", $3);}
+					| expr LE expr {$$ = new CompareNode($1, "<=", $3);}
+					| expr GE expr {$$ = new CompareNode($1, ">=", $3);}
+                    ;
 
 /* ECE 573 students use this version of do_while_stmt */
 while_stmt			: WHILE 

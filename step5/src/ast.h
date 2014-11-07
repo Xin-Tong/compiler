@@ -366,9 +366,55 @@ public:
 class IfStatement : public Statement
 {
 public:
-	ExpressionNode *pExpNode;
-	IfStatement() {}
-	IfStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
+	ExpressionNode *pCmpNode;
+    list<Statement*> *pFuncBody;
+    list<Statement*> *pElsePart; 
+    string jmpLabel;	
+    IfStatement() {}
+    IfStatement(ExpressionNode *_pCmpNode, list<Statement*>* _pFuncBody, list<Statement*>* _pElsePart) : pCmpNode(_pCmpNode), pFuncBody(_pFuncBody), pElsePart(_pElsePart) {}
+     virtual void GenIR()
+    {
+        pCmpNode->GenIR();
+
+        list<Statement*>::iterator iter;
+        for (iter = pFuncBody->begin(); iter != pFuncBody->end(); iter ++)
+        {
+            (*iter)->GenIR();
+        }
+
+        if (pElsePart->size() != 0)
+        {
+            jmpLabel = IRNode::get_label();
+
+            for (iter = pElsePart->begin(); iter != pElsePart->end(); iter ++)
+            {
+                (*iter)->GenIR();
+            }
+        }
+    }
+    virtual void PrintIR()
+    {
+        pCmpNode->PrintIR();
+
+        list<Statement*>::iterator iter;
+        for (iter = pFuncBody->begin(); iter != pFuncBody->end(); iter ++)
+        {
+            (*iter)->PrintIR();
+        }
+        if (pElsePart->size() != 0)
+        {
+            printf("JUMP %s\n", jmpLabel.c_str());
+        }
+        printf("LABEL %s\n", pCmpNode->ir.op3.c_str());
+        if (pElsePart->size() != 0)
+        {
+            for (iter = pElsePart->begin(); iter != pElsePart->end(); iter ++)
+            {
+                (*iter)->PrintIR();
+            }
+            printf("LABEL %s\n", jmpLabel.c_str());
+        }
+    }
 };
 
 class WhileStatement : public Statement
