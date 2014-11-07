@@ -328,7 +328,9 @@ else_part			: ELSE
 						str = "BLOCK " + str; 
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
-					} func_body | ;
+					} func_body{$$ = $3;} 
+                    |{$$ = new list<Statement*>();} 
+                    ;
 cond				: expr '<' expr {$$ = new CompareNode($1, "<", $3);}
 					| expr '>' expr {$$ = new CompareNode($1, ">", $3);}
 					| expr '=' expr {$$ = new CompareNode($1, "=", $3);}

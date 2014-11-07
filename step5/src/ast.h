@@ -415,6 +415,11 @@ public:
             printf("LABEL %s\n", jmpLabel.c_str());
         }
     }
+    virtual void PrintTiny()
+    {
+        
+    }
+
 };
 
 class WhileStatement : public Statement
