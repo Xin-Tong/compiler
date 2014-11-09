@@ -12,6 +12,8 @@ using namespace std;
 
 extern int global_temp_reg_count;
 extern int global_label_count;
+extern vector<string> whileLabelBegin;
+extern vector<string> whileLabelEnd;
 
 class IRNode
 {
@@ -45,11 +47,9 @@ public:
 	string val;
 	string type;
 	IRNode ir;
-	bool isNum;
 	
 	ExpressionNode()
 	{
-		isNum = false;
 	}
 	ExpressionNode(ExpressionNode *_exp)
 	{
@@ -59,13 +59,11 @@ public:
 		ir.op1 = _exp->ir.op1;
 		ir.op2 = _exp->ir.op2;
 		ir.op3 = _exp->ir.op3;
-		isNum = false;
 	}
 	ExpressionNode(string _val, string _type)
 	{
 		val = _val;
 		type = _type;
-		isNum = true;
 	}
 	virtual string GenIR()
 	{
@@ -406,6 +404,7 @@ public:
 class Statement
 {
 public:
+    string name;
 	virtual void GenIR() {}
 	virtual void PrintIR() {}
 	virtual void PrintTiny() {}
@@ -424,23 +423,23 @@ public:
 	ExpressionNode *pCmpNode;
     list<Statement*> *pFuncBody;
     list<Statement*> *pElsePart; 
-    string jmpLabel;	
+    string jmpLabel;
     IfStatement() {}
     IfStatement(ExpressionNode *_pCmpNode, list<Statement*>* _pFuncBody, list<Statement*>* _pElsePart) : pCmpNode(_pCmpNode), pFuncBody(_pFuncBody), pElsePart(_pElsePart) {}
      virtual void GenIR()
     {
         pCmpNode->GenIR();
-
+        
         list<Statement*>::iterator iter;
         for (iter = pFuncBody->begin(); iter != pFuncBody->end(); iter ++)
         {
             (*iter)->GenIR();
         }
-
+        
         if (pElsePart->size() != 0)
         {
             jmpLabel = IRNode::get_label();
-
+            
             for (iter = pElsePart->begin(); iter != pElsePart->end(); iter ++)
             {
                 (*iter)->GenIR();
@@ -450,10 +449,19 @@ public:
     virtual void PrintIR()
     {
         pCmpNode->PrintIR();
-
+        
         list<Statement*>::iterator iter;
         for (iter = pFuncBody->begin(); iter != pFuncBody->end(); iter ++)
         {
+            if ((*iter)->name == "BREAK")
+            {
+                printf(";JUMP %s\n", whileLabelEnd[whileLabelEnd.size() - 1].c_str());
+            }
+            else if ((*iter)->name == "CONTINUE")
+            {
+                printf(";JUMP %s\n", whileLabelEnd[whileLabelEnd.size() - 1].c_str());
+            }
+            
             (*iter)->PrintIR();
         }
         if (pElsePart->size() != 0)
@@ -465,6 +473,15 @@ public:
         {
             for (iter = pElsePart->begin(); iter != pElsePart->end(); iter ++)
             {
+                if ((*iter)->name == "BREAK")
+                {
+                    printf(";JUMP %s\n", whileLabelEnd[whileLabelEnd.size() - 1].c_str());
+                }
+                else if ((*iter)->name == "CONTINUE")
+                {
+                    printf(";JUMP %s\n", whileLabelEnd[whileLabelEnd.size() - 1].c_str());
+                }
+                
                 (*iter)->PrintIR();
             }
             printf(";LABEL %s\n", jmpLabel.c_str());
@@ -498,9 +515,67 @@ public:
 class WhileStatement : public Statement
 {
 public:
-    ExpressionNode *pExpNode;
+    ExpressionNode *pCmpNode;
+    list<Statement*> *pAug;
+    string whileLabel;
     WhileStatement() {}
-    WhileStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
+    WhileStatement(ExpressionNode* _pCmpNode, list<Statement*> *_pAug) : pCmpNode(_pCmpNode), pAug(_pAug) {}
+    
+    virtual void GenIR()
+    {
+        whileLabel = IRNode::get_label();
+        whileLabelBegin.push_back(whileLabel);
+        pCmpNode->GenIR();
+        whileLabelEnd.push_back(pCmpNode->ir.op3);
+        list<Statement*>::iterator iter;
+        for (iter = pAug->begin(); iter != pAug->end(); iter ++)
+        {
+            (*iter)->GenIR();
+        }
+    }
+    
+    virtual void PrintIR()
+    {
+        printf(";LABEL %s\n", whileLabel.c_str());
+        pCmpNode->PrintIR();
+        list<Statement*>::iterator iter;
+        for (iter = pAug->begin(); iter != pAug->end(); iter ++)
+        {
+            if ((*iter)->name == "BREAK")
+            {
+                printf(";JUMP %s\n", pCmpNode->ir.op3.c_str());
+            }
+            else if ((*iter)->name == "CONTINUE")
+            {
+                printf(";JUMP %s\n", whileLabel.c_str());
+            }
+            
+            (*iter)->PrintIR();
+        }
+        printf(";JUMP %s\n", whileLabel.c_str());
+        printf(";LABEL %s\n", pCmpNode->ir.op3.c_str());
+        
+        whileLabelBegin.pop_back();
+        whileLabelEnd.pop_back();
+    }
+};
+
+class ContinueStatement : public Statement
+{
+public:
+    ContinueStatement()
+    {
+        name = "CONTINUE";
+    }
+};
+
+class BreakStatement : public Statement
+{
+public:
+    BreakStatement()
+    {
+        name = "BREAK";
+    }
 };
 
 class AssignStatement : public Statement

@@ -15,6 +15,8 @@ struct symbol* current_symbol = NULL;
 Global *root = NULL;
 int global_temp_reg_count = 1;
 int global_label_count = 1;
+vector<string> whileLabelBegin;
+vector<string> whileLabelEnd;
 
 void trim(string &_str);
 void ProcessVar(string s1, string s2, struct symbol* _psym);
@@ -60,11 +62,6 @@ main(int argc, char *argv[])
 	Function *pFunc;
 	list<Function*> *pFuncList;
 	Global *pGlobal;
-	//Xin
-	//else_stmt *else_st;
-	WhileStatement *pWhile;
-	//cond_node *conode;
-    
 }
 
 %token <number> STATE
@@ -110,10 +107,13 @@ main(int argc, char *argv[])
 %type <pExpNode> expr
 %type <pExpNode> factor
 %type <pExpNode> postfix_expr
+%type <pExpNode> cond
+%type <cstr> compop
 %type <pStateList> stmt_list
 %type <pFunc> func_decl
 %type <pFuncList> func_declarations 
 %type <pStateList> func_body
+%type <pStateList> else_part
 %type <pState> stmt
 %type <pAssign> assign_stmt
 %type <pStateList> read_stmt
@@ -122,16 +122,15 @@ main(int argc, char *argv[])
 %type <pExpNodeList> expr_list_tail
 %type <pRtnState> return_stmt
 %type <pState> if_stmt
+%type <pStateList> else_part
+%type <pStateList> aug 
+%type <pState> aug_stmt
+%type <pState> aug_if_stmt
+%type <pStateList> aug_else_part
+%type <pStateList> aug_stmt_list
 %type <pState> while_stmt
 %type <pGlobal> program
 %type <pFuncList> pgm_body
-%type <pExpNode> cond
-%type <cstr> compop
-%type <pStateList> else_part 
-//Xin
-
-
-
 
 %%
 /* Program */
@@ -237,8 +236,7 @@ stmt_list			: stmt stmt_list {$2->push_front($1); $$ = $2;}
 stmt				: assign_stmt {$$ = $1;}
                     | return_stmt {$$ = $1;}
                     | if_stmt {$$ = $1;} 
-                    | while_stmt { $$ = $1;}
-					;
+                    | while_stmt {$$ = $1;};
 
 /* Basic Statements */
 assign_stmt			: id FZ expr ";" 
@@ -315,7 +313,7 @@ if_stmt				: IF
 					} "(" cond ")" func_body else_part ENDIF 
 					{
 						$$ = new IfStatement($4, $6, $7);
-                        current_symbol = current_symbol->father;
+						current_symbol = current_symbol->father;
 					};
 else_part			: ELSE 
 					{
@@ -328,16 +326,15 @@ else_part			: ELSE
 						str = "BLOCK " + str; 
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
-					} func_body{$$ = $3;} 
-                    |{$$ = new list<Statement*>();} 
-                    ;
-cond				: expr '<' expr {$$ = new CompareNode($1, "<", $3);}
-					| expr '>' expr {$$ = new CompareNode($1, ">", $3);}
-					| expr '=' expr {$$ = new CompareNode($1, "=", $3);}
-					| expr NE expr {$$ = new CompareNode($1, "!=", $3);}
-					| expr LE expr {$$ = new CompareNode($1, "<=", $3);}
-					| expr GE expr {$$ = new CompareNode($1, ">=", $3);}
-                    ;
+					} func_body {$$ = $3;}
+					| {$$ = new list<Statement*>();};
+cond				: expr compop expr {$$ = new CompareNode($1, $2, $3);};
+compop				: "<" {char str[] = "<"; $$ = str;} 
+					| ">" {char str[] = ">"; $$ = str;}
+					| "=" {char str[] = "=="; $$ = str;}
+					| NE  {char str[] = "!="; $$ = str;}
+					| LE  {char str[] = "<="; $$ = str;}
+					| GE  {char str[] = ">="; $$ = str;};
 
 /* ECE 573 students use this version of do_while_stmt */
 while_stmt			: WHILE 
@@ -350,36 +347,42 @@ while_stmt			: WHILE
 						str = "BLOCK " + str; 
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
-					} "(" cond ")" aug ENDWHILE
-                     {
-                        $$ = new WhileStatement();
-                        current_symbol = current_symbol->father;};
-aug					: decl aug_stmt_list | aug_stmt_list;
-aug_stmt_list		: aug_stmt_list aug_stmt
-					| aug_stmt_list read_stmt
-					| aug_stmt_list write_stmt
-					| ;
+					} "(" cond ")" aug ENDWHILE 
+					{
+						$$ = new WhileStatement($4, $6);
+						current_symbol = current_symbol->father;
+					};
+aug					: decl aug_stmt_list {$$ = $2;}
+					| aug_stmt_list {$$ = $1;};
+aug_stmt_list		: aug_stmt_list aug_stmt {$1->push_back($2); $$ = $1;}
+					| aug_stmt_list write_stmt {process_rw_list($1, $2); $$ = $1;}
+					| aug_stmt_list read_stmt {process_rw_list($1, $2); $$ = $1;}
+					| {$$ = new list<Statement*>();};
 /* CONTINUE and BREAK statements. ECE 573 students only */
-aug_stmt			: assign_stmt  
-					| return_stmt
-					| aug_if_stmt  
-					| while_stmt  
-					| CONTINUE ";"  
-					| BREAK";" 
-					;
-
+aug_stmt			: assign_stmt {$$ = $1;}
+					| return_stmt {$$ = $1;}
+					| aug_if_stmt {$$ = $1;}
+					| while_stmt  {$$ = $1;}
+					| CONTINUE ";" {$$ = new ContinueStatement();}
+					| BREAK ";" {$$ = new BreakStatement();};
 
 /* Augmented IF statements for ECE 573 students */ 
 aug_if_stmt			: IF 
 					{
 						stringstream ss; 
-						ss << global_block_num; global_block_num++; 
+						ss << global_block_num; 
+						global_block_num++; 
 						string str; 
 						ss>>str; 
 						str = "BLOCK " + str; 
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
-					} "(" cond ")" aug aug_else_part ENDIF {current_symbol = current_symbol->father;};
+					} "(" cond ")" aug aug_else_part ENDIF 
+//					} "(" cond ")" func_body aug_else_part ENDIF 
+					{
+						$$ = new IfStatement($4, $6, $7);
+						current_symbol = current_symbol->father;
+					};
 aug_else_part		: ELSE 
 					{
 						current_symbol = current_symbol->father; 
@@ -391,9 +394,9 @@ aug_else_part		: ELSE
 						str = "BLOCK " + str; 
 						struct symbol* sym = Sym_Alloc(str, current_symbol, "LOCAL", "BLOCK"); 
 						current_symbol = sym;
-					} aug aug_else_part 
-					| 
-					;
+					} aug aug_else_part { $$ = $3;}
+//					} func_body { $$ = $3;}
+					| {$$ = new list<Statement*>();};
 
 %%
 
