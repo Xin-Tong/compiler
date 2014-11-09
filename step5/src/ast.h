@@ -123,8 +123,8 @@ class CompareNode: public ExpressionNode
 {
 public:
     ExpressionNode *left;
-	ExpressionNode *right;
-    string cmptr;
+    ExpressionNode *right;
+    string cmptr, tmp;
     CompareNode(ExpressionNode* _left, string _cmptr, ExpressionNode* _right) : left(_left), cmptr(_cmptr), right(_right)
     {
         type = left->type;
@@ -191,6 +191,11 @@ public:
         ir.op2 = right->GenIR();
         ir.op3 = ir.get_label();
         
+		
+		std::size_t pos = ir.op2.find_first_of("$");
+		if(pos == string::npos)
+			tmp = ir.get_reg();
+			
         return ir.op3;
     }
     
@@ -203,7 +208,57 @@ public:
     
     virtual void PrintTiny()
     {
-        
+		left->PrintTiny();
+		right->PrintTiny();
+				
+		string s3(ir.op3);
+		std::size_t pos = s3.find_first_of("1234567890");
+		s3.replace(0, pos, "r");
+		
+		string s1(ir.op1);
+		pos = s1.find_first_of("$");
+		if(pos != string::npos)
+		{
+			s1.replace(0, 2, "r");	//replace $T with r
+		}
+
+
+		string s2(ir.op2);
+		pos = s2.find_first_of("$");
+		if(pos != string::npos)
+		{
+			s2.replace(0,2,"r"); //replace $T with r
+			if(left->type == "INT")
+				cout<<"cmpi "<<s1<<" "<<s2<<endl;
+			else if(left->type == "FLOAT")	
+				cout<<"cmpr "<<s1<<" "<<s2<<endl;
+		}
+		else
+		{	
+			tmp.replace(0,2,"r");
+			cout<<"move "<<s2<<" "<<tmp<<endl;
+			if(left->type == "INT")
+				cout<<"cmpi "<<s1<<" "<<tmp<<endl;
+			else if(left->type == "FLOAT")	
+				cout<<"cmpr "<<s1<<" "<<tmp<<endl;
+		}
+    
+		string oprtr;
+		if(ir.opcode == "LEI")		oprtr = "jle";
+		else if (ir.opcode == "LTI")	oprtr = "jlt";
+		else if (ir.opcode == "GEI")	oprtr = "jge";
+		else if (ir.opcode == "GTI")	oprtr = "jgt";
+		else if (ir.opcode == "NEI")	oprtr = "jne";
+		else if (ir.opcode == "EQI")	oprtr = "jeq";
+		
+		else if (ir.opcode == "LEF")	oprtr = "jle";
+		else if (ir.opcode == "LTF")	oprtr = "jlt";
+		else if (ir.opcode == "GEF")	oprtr = "jge";
+		else if (ir.opcode == "GTF")	oprtr = "jgt";
+		else if (ir.opcode == "NEF")	oprtr = "jne";
+		else if (ir.opcode == "EQF")	oprtr = "jeq";
+		
+		cout<<oprtr<<" "<<ir.op3<<endl;	
     }
 };
 
@@ -403,21 +458,39 @@ public:
         }
         if (pElsePart->size() != 0)
         {
-            printf("JUMP %s\n", jmpLabel.c_str());
+            printf(";JUMP %s\n", jmpLabel.c_str());
         }
-        printf("LABEL %s\n", pCmpNode->ir.op3.c_str());
+        printf(";LABEL %s\n", pCmpNode->ir.op3.c_str());
         if (pElsePart->size() != 0)
         {
             for (iter = pElsePart->begin(); iter != pElsePart->end(); iter ++)
             {
                 (*iter)->PrintIR();
             }
-            printf("LABEL %s\n", jmpLabel.c_str());
+            printf(";LABEL %s\n", jmpLabel.c_str());
         }
     }
     virtual void PrintTiny()
     {
-        
+        pCmpNode->PrintTiny();
+		list<Statement*>::iterator iter;
+        for (iter = pFuncBody->begin(); iter != pFuncBody->end(); iter ++)
+        {
+            (*iter)->PrintTiny();
+        }
+        if (pElsePart->size() != 0)
+        {
+            printf("jmp %s\n", jmpLabel.c_str());
+        }
+        printf("label %s\n", pCmpNode->ir.op3.c_str());
+        if (pElsePart->size() != 0)
+        {
+            for (iter = pElsePart->begin(); iter != pElsePart->end(); iter ++)
+            {
+                (*iter)->PrintTiny();
+            }
+            printf("label %s\n", jmpLabel.c_str());
+        }
     }
 
 };
