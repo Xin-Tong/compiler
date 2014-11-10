@@ -648,8 +648,16 @@ public:
 		pExpNode->PrintTiny();
 		string str(ir.op1);
 		std::size_t pos = str.find_first_of("1234567890");
-		str.replace(0, pos, "r");
-		printf("move %s %s\n", str.c_str(), ir.op3.c_str());
+        if (pos != string::npos)
+        {
+            str.replace(0, pos, "r");
+            printf("move %s %s\n", str.c_str(), ir.op3.c_str());
+        }
+        else
+        {
+            printf("move %s r900\n", str.c_str());
+            printf("move r900 %s\n", ir.op3.c_str());
+        }
 	}
 };
 
