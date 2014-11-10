@@ -572,9 +572,6 @@ public:
         }
         printf(";JUMP %s\n", whileLabel.c_str());
         printf(";LABEL %s\n", pCmpNode->ir.op3.c_str());
-        
-        whileLabelBegin.pop_back();
-        whileLabelEnd.pop_back();
     }
 
     virtual void PrintTiny(){
@@ -596,6 +593,8 @@ public:
         printf("jmp %s\n", whileLabel.c_str());
         printf("label %s\n", pCmpNode->ir.op3.c_str());
 
+        whileLabelBegin.pop_back();
+        whileLabelEnd.pop_back();
     }
 };
 
