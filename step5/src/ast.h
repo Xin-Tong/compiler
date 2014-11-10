@@ -493,6 +493,15 @@ public:
 		list<Statement*>::iterator iter;
         for (iter = pFuncBody->begin(); iter != pFuncBody->end(); iter ++)
         {
+            if ((*iter)->name == "BREAK")
+            {
+                printf("jmp %s\n", whileLabelEnd[whileLabelEnd.size() - 1].c_str());
+            }
+            else if ((*iter)->name == "CONTINUE")
+            {
+                printf("jmp %s\n", whileLabelEnd[whileLabelEnd.size() - 1].c_str());
+            }
+
             (*iter)->PrintTiny();
         }
         if (pElsePart->size() != 0)
@@ -504,6 +513,15 @@ public:
         {
             for (iter = pElsePart->begin(); iter != pElsePart->end(); iter ++)
             {
+                if ((*iter)->name == "BREAK")
+                {
+                    printf("jmp %s\n", whileLabelEnd[whileLabelEnd.size() - 1].c_str());
+                }
+                else if ((*iter)->name == "CONTINUE")
+                {
+                    printf("jmp %s\n", whileLabelEnd[whileLabelEnd.size() - 1].c_str());
+                }
+
                 (*iter)->PrintTiny();
             }
             printf("label %s\n", jmpLabel.c_str());
@@ -557,6 +575,27 @@ public:
         
         whileLabelBegin.pop_back();
         whileLabelEnd.pop_back();
+    }
+
+    virtual void PrintTiny(){
+        printf("label %s\n", whileLabel.c_str());
+        pCmpNode->PrintTiny();
+        list<Statement*>::iterator iter;
+        for (iter = pAug->begin(); iter != pAug->end(); iter ++)
+        {
+            if ((*iter)->name == "BREAK")
+            {
+                printf("jump %s\n", pCmpNode->ir.op3.c_str());
+            }
+            else if ((*iter)->name == "CONTINUE")
+            {
+                printf("label %s\n", whileLabel.c_str());
+            }
+            (*iter)->PrintTiny();
+        }
+        printf("jmp %s\n", whileLabel.c_str());
+        printf("label %s\n", pCmpNode->ir.op3.c_str());
+
     }
 };
 
@@ -730,6 +769,7 @@ public:
     }
     virtual void PrintTiny()
     {
+        printf("label main\n");
         list<Statement*>::iterator iter;
         for (iter = pStatementsList->begin(); iter != pStatementsList->end(); iter ++)
         {
