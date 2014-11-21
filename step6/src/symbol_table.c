@@ -107,16 +107,16 @@ int Variable_Add(struct symbol* _psym, string _name, string _type, string _value
 	{
 		if (_opt == "param")
 		{
-			ss << _psym->num_of_params;
 			_psym->num_of_params ++;
+			ss << _psym->num_of_params;
 			ss >> irname;
 			irname = "$P" + irname;
 //			printf("Now we have a new param named as %s\n", tinyname.c_str());
 		}
 		else if (_opt == "local")
 		{
-			ss << _psym->num_of_locals;
 			_psym->num_of_locals ++;
+			ss << _psym->num_of_locals;
 			ss >> irname;
 			irname = "$L" + irname;
 //			printf("Now we have a new local named as %s\n", tinyname.c_str());

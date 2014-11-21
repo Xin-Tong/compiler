@@ -11,12 +11,52 @@
 #include "symbol_table.h"
 using namespace std;
 
+static int MAX_REGISTER_NUM =   15;
+static int R_NUM            =   17;
+static int R_NUM_BASE       =   17;
+static int L_NUM            =   0;
+
 static int global_ir_reg_count = 1;
 static int global_label_count = 1;
 static string whileLabelBegin;
 static string whileLabelEnd;
 static int assign_id = -1;
 static struct symbol* pCurentSym = NULL;
+static int nMakeUpForTempIndex = 1;
+
+static string IR2Tiny(string ir)
+{
+    string secondChar = ir.substr(1, 1);
+    string restchars = ir.substr(2, ir.length() - 1);
+    string transfered = ir;
+    int transfered_id = atoi(restchars.c_str());;
+    if (secondChar == "T")
+    {
+        transfered_id -= nMakeUpForTempIndex;
+        stringstream ss;
+        ss << transfered_id;
+        ss >> transfered;
+        transfered = "r" + transfered;
+    }
+    else if(secondChar == "P")
+    {
+        transfered_id = R_NUM - transfered_id;
+        stringstream ss;
+        ss << transfered_id;
+        ss >> transfered;
+        transfered = "$" + transfered;
+    }
+    else if(secondChar == "L")
+    {
+        transfered_id = L_NUM - transfered_id;
+        stringstream ss;
+        ss << transfered_id;
+        ss >> transfered;
+        transfered = "$" + transfered;
+    }
+    
+    return transfered;
+}
 
 class IRNode
 {
@@ -50,9 +90,15 @@ public:
 	string val;
 	string type;
 	IRNode ir;
+    bool bFunction;
+    struct symbol* psym;
+    struct symbol* pCurrentSymp;
+    vector<string> vars;
 	
 	ExpressionNode()
 	{
+        bFunction = false;
+        psym = NULL;
 	}
 	ExpressionNode(ExpressionNode *_exp)
 	{
@@ -62,36 +108,90 @@ public:
 		ir.op1 = _exp->ir.op1;
 		ir.op2 = _exp->ir.op2;
 		ir.op3 = _exp->ir.op3;
+        bFunction = _exp->bFunction;
+        psym = _exp->psym;
 	}
 	ExpressionNode(string _val, string _type)
 	{
 		val = _val;
 		type = _type;
+        bFunction = false;
+        psym = NULL;
 	}
+    ExpressionNode(struct symbol* _psym, struct symbol* _pCurrentSymp, vector<string> _vars)
+    {
+        bFunction = true;
+        psym = _psym;
+        pCurrentSymp = _pCurrentSymp;
+        vars = _vars;
+    }
 	virtual string GenIR()
 	{
-		if(type == "INT")
-		{
-			ir.opcode = "STOREI";
-		}
-		else
-		{
-			ir.opcode = "STOREF";
-		}
-		ir.op3 = ir.get_ir_reg();
-		return ir.op3;
+        if (!bFunction)
+        {
+            if(type == "INT")
+            {
+                ir.opcode = "STOREI";
+            }
+            else
+            {
+                ir.opcode = "STOREF";
+            }
+        }
+        ir.op3 = ir.get_ir_reg();
+        return ir.op3;
 	}
 	virtual void PrintIR()
 	{
-		cout << ";" << ir.opcode << " " << val << " " << ir.op3 << endl;		
+        if (!bFunction)
+        {
+            cout << ";" << ir.opcode << " " << val << " " << ir.op3 << endl;
+        }
+        else
+        {
+            cout << ";PUSH" << endl;
+            vector<string>::iterator iter;
+            for (iter = vars.begin(); iter != vars.end(); ++iter)
+            {
+                cout << ";PUSH " << *iter << endl;
+            }
+            cout << ";JSR " << psym->name << endl;
+            for (int i = 0; i < psym->num_of_params; i ++)
+            {
+                cout << ";POP" << endl;
+            }
+            cout << ";POP " << ir.op3 << endl;
+        }
 	}
 	virtual void PrintTiny()
 	{
-		string str(ir.op3);
-		std::size_t pos = str.find_first_of("1234567890");
-		str.replace(0, pos, "r");
-//		printf("move %f %s\n", val, str.c_str());
-		cout << "move " << val << " " << str << endl;;
+        if (!bFunction)
+        {
+            cout << "move " << val << " " << IR2Tiny(ir.op3) << endl;;
+        }
+        else
+        {
+            printf("push\n");
+            vector<string>::iterator iter;
+            for (iter = vars.begin(); iter != vars.end(); ++iter)
+            {
+                cout << "push " << IR2Tiny(*iter) << endl;
+            }
+            for (int i = 0; i < MAX_REGISTER_NUM; i ++)
+            {
+                printf("push r%d\n", i);
+            }
+            cout << "jsr " << psym->name << endl;
+            for (int i = MAX_REGISTER_NUM - 1; i > -1; i --)
+            {
+                printf("pop r%d\n", i);
+            }
+            for (int i = 0; i < psym->num_of_params; i ++)
+            {
+                cout << "pop" << endl;
+            }
+            cout << "pop " << IR2Tiny(ir.op3) << endl;
+        }
 	}
 };
 
@@ -103,6 +203,7 @@ public:
 	{
 		name = _name;
 		type = _type;
+        ir.op3 = _name;
 	}
 	
 	virtual void PrintIR() {}
@@ -192,10 +293,12 @@ public:
         ir.op2 = right->GenIR();
         ir.op3 = ir.get_label();
         
-		
 		std::size_t pos = ir.op2.find_first_of("$");
 		if(pos == string::npos)
+        {
 			tmp = ir.get_ir_reg();
+            nMakeUpForTempIndex --;
+        }
 			
         return ir.op3;
     }
@@ -212,23 +315,14 @@ public:
 		left->PrintTiny();
 		right->PrintTiny();
 				
-		string s3(ir.op3);
-		std::size_t pos = s3.find_first_of("1234567890");
-		s3.replace(0, pos, "r");
-		
-		string s1(ir.op1);
-		pos = s1.find_first_of("$");
-		if(pos != string::npos)
-		{
-			s1.replace(0, 2, "r");	//replace $T with r
-		}
-
+		string s3(IR2Tiny(ir.op3));
+		string s1(IR2Tiny(ir.op1));
 
 		string s2(ir.op2);
-		pos = s2.find_first_of("$");
+		std::size_t pos = s2.find_first_of("$");
 		if(pos != string::npos)
 		{
-			s2.replace(0,2,"r"); //replace $T with r
+            s2 = IR2Tiny(ir.op2);
 			if(left->type == "INT")
 				cout<<"cmpi "<<s1<<" "<<s2<<endl;
 			else if(left->type == "FLOAT")	
@@ -236,7 +330,7 @@ public:
 		}
 		else
 		{	
-			tmp.replace(0,2,"r");
+            tmp = IR2Tiny(tmp);
 			cout<<"move "<<s2<<" "<<tmp<<endl;
 			if(left->type == "INT")
 				cout<<"cmpi "<<s1<<" "<<tmp<<endl;
@@ -259,7 +353,7 @@ public:
 		else if (ir.opcode == "NEF")	oprtr = "jne";
 		else if (ir.opcode == "EQF")	oprtr = "jeq";
 		
-		cout<<oprtr<<" "<<ir.op3<<endl;	
+		cout << oprtr << " "<< ir.op3 << endl; // op3 could be label name
     }
 };
 
@@ -338,23 +432,9 @@ public:
 		left->PrintTiny();
 		right->PrintTiny();
 
-		string s3(ir.op3);
-		std::size_t pos = s3.find_first_of("1234567890");
-		s3.replace(0, pos, "r");
-
-		string s2(ir.op2);
-		pos = s2.find_first_of("$");
-		if(pos != string::npos)
-		{
-			s2.replace(0, 2, "r");  //replace $T with r
-		}
-    
-		string s1(ir.op1);
-		pos = s1.find_first_of("$");
-		if(pos != string::npos)
-		{
-			s1.replace(0, 2, "r");	//replace $T with r
-		}
+		string s3(IR2Tiny(ir.op3));
+		string s2(IR2Tiny(ir.op2));
+		string s1(IR2Tiny(ir.op1));
 
 		string oprtr;
 		if(ir.opcode == "ADDI")			oprtr = "addi";
@@ -384,32 +464,39 @@ class ReturnStatement : public Statement
 {
 public:
 	ExpressionNode *pExpNode;
+    string result;
+    IRNode ir;
     string temp;
 	ReturnStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
     
     virtual void GenIR()
     {
-        pExpNode->GenIR();
-        temp = IRNode::get_ir_reg();
+        if(pExpNode->type == "INT")
+        {
+            ir.opcode = "STOREI";
+        }
+        else
+        {
+            ir.opcode = "STOREF";
+        }
+        ir.op1 = pExpNode->GenIR();
+        ir.op3 = IRNode::get_ir_reg();
     }
     virtual void PrintIR()
     {
         pExpNode->PrintIR();
-        if (pExpNode->type == "INT")
-        {
-            cout << "*********" << pExpNode->ir.op2 << endl;
-            printf(";STOREI %s %s\n", pExpNode->ir.op3.c_str(), temp.c_str());
-            printf(";STOREI %s R\n", temp.c_str());
-        }
-        else if (pExpNode->type == "FLOAT")
-        {
-            cout << "*********" << pExpNode->ir.op2 << endl;
-            printf(";STOREF %s %s\n", pExpNode->ir.op3.c_str(), temp.c_str());
-            printf(";STOREF %s R\n", temp.c_str());
-        }
+        printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op3.c_str());
+        printf(";%s %s $R\n", ir.opcode.c_str(), ir.op3.c_str());
         printf(";RET\n");
     }
-    virtual void PrintTiny() {}
+    virtual void PrintTiny()
+    {
+        pExpNode->PrintTiny();
+        printf("move %s %s\n", IR2Tiny(ir.op1).c_str(), IR2Tiny(ir.op3).c_str());
+        printf("move %s $%d\n", IR2Tiny(ir.op3).c_str(), (int)R_NUM);
+        printf("unlnk\n");
+        printf("ret\n");
+    }
 };
 
 class IfStatement : public Statement
@@ -611,7 +698,7 @@ public:
 class AssignStatement : public Statement
 {
 public:
-	string name;
+	string name, tmp;
 	ExpressionNode *pExpNode;
 	IRNode ir;
 	AssignStatement(string _name, ExpressionNode *_pExpNode): name(_name), pExpNode(_pExpNode) {}	
@@ -626,14 +713,18 @@ public:
 		{
 			ir.opcode = "STOREF";
 		}
-		ir.op1 = pExpNode->GenIR();
+        ir.op1 = pExpNode->GenIR();
+        std::size_t pos = ir.op1.find_first_of("1234567890");
+        if(pos == string::npos)
+        {
+            tmp = IRNode::get_ir_reg();
+        }
 		ir.op3 = name;
 	}
 	virtual void PrintIR()
 	{
 		pExpNode->PrintIR();
 		printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op3.c_str());
-//        printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), Find_Variable(ir.op3, pCurentSym, false)->irname);
 	}
 	virtual void PrintTiny()
 	{
@@ -642,17 +733,14 @@ public:
 		std::size_t pos = str.find_first_of("1234567890");
         if(pos != string::npos)
         {
-            str.replace(0, pos, "r");
-            printf("move %s %s\n", str.c_str(), ir.op3.c_str());
+            str = IR2Tiny(ir.op1);
+            printf("move %s %s\n", str.c_str(), IR2Tiny(ir.op3).c_str());
         }
         else
         {
-			if (assign_id == -1)
-			{
-				assign_id = 0;
-			}
-		    printf("move %s r%d\n", str.c_str(), assign_id);
-		    printf("move r%d %s\n", assign_id, ir.op3.c_str());
+            tmp = IR2Tiny(tmp);
+		    printf("move %s r%d\n", str.c_str(), tmp.c_str());
+		    printf("move %s %s\n", tmp.c_str(), IR2Tiny(ir.op3).c_str());
     	}
     }
 };
@@ -692,7 +780,7 @@ public:
 		{
 			str = "sys readr";
 		}
-		printf("%s %s\n", str.c_str(), ir.op1.c_str());
+		printf("%s %s\n", str.c_str(), IR2Tiny(ir.op1).c_str());
 	}
 };
 
@@ -739,7 +827,7 @@ public:
 		{
 			str = "sys writes";
 		}
-		printf("%s %s\n", str.c_str(), ir.op1.c_str());
+		printf("%s %s\n", str.c_str(), IR2Tiny(ir.op1).c_str());
 	}
 };
 
@@ -777,7 +865,8 @@ public:
     }
     virtual void PrintTiny()
     {
-        printf("label main\n");
+        printf("label %s\n", name.c_str());
+        printf("link %d\n", psym->num_of_locals);
         list<Statement*>::iterator iter;
         for (iter = pStatementsList->begin(); iter != pStatementsList->end(); iter ++)
         {
@@ -790,7 +879,8 @@ class Global
 {
 public:
     list<Function*> *pFunctionList;
-    Global(list<Function*> *_pFunctionList): pFunctionList(_pFunctionList) {}
+    struct symbol* psym;
+    Global(list<Function*> *_pFunctionList, struct symbol* _psym): pFunctionList(_pFunctionList), psym(_psym) {}
     virtual void GenIR()
     {
         list<Function*>::iterator iter;
@@ -812,12 +902,28 @@ public:
     }
     virtual void PrintTiny()
     {
+        printf("push\n");
+        for (int i = 0; i < MAX_REGISTER_NUM; i ++)
+        {
+            printf("push r%d\n", i);
+        }
+        printf("jsr main\n");
+        printf("sys halt\n");
         list<Function*>::iterator iter;
         for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
         {
             pCurentSym = (*iter)->psym;
+            if ((*iter)->name != "main")
+            {
+                R_NUM = R_NUM_BASE + psym->children.size() - 1;
+            }
+            else
+            {
+                R_NUM = R_NUM_BASE;
+            }
             (*iter)->PrintTiny();
         }
+        printf("end\n");
     }
 };
 

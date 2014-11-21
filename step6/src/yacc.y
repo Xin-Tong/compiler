@@ -140,7 +140,7 @@ program				: PROGRAM id BN
 					} 
 					pgm_body END 
 					{
-						root = new Global($5);
+						root = new Global($5, global_symbol);
 						root->GenIR();
 						printf(";IR code\n");
 						root->PrintIR();	
@@ -160,7 +160,6 @@ program				: PROGRAM id BN
 							}
 						}
 						root->PrintTiny();
-						printf("sys halt\n");
 //						Print_Symbol(global_symbol);
 					};
                     //    printf("The type of variable a is %d.\n", Find_Type("a", global_symbol));};
@@ -206,8 +205,8 @@ func_decl			: FUNCTION any_type id
 					{
 						string str($3); 
 						struct symbol* sym = Sym_Alloc(str, global_symbol, "LOCAL", "FUNCTION");
-						sym->num_of_locals = 1;
-						sym->num_of_params = 1;
+						sym->num_of_locals = 0;
+						sym->num_of_params = 0;
 						current_symbol = sym;
 					} 
 					func_para BN func_body END 
@@ -247,13 +246,15 @@ assign_stmt			: id FZ expr ";"
 						std::size_t pos = str.find(":=");
 						string str_sub = str.substr(0, pos);
 						trim(str_sub);
-//						$$ = new AssignStatement(str_sub, $3);
 						struct variable* info = Find_Variable(str_sub, current_symbol, false);
 						$$ = new AssignStatement(info->irname, $3);
 					};
 read_stmt			: READ "(" id_list ")" ";" {$$ = new list<Statement*>(); process_read($$, $3);};
 write_stmt			: WRITE "(" id_list ")" ";" {$$ = new list<Statement*>(); process_write($$, $3);};
-return_stmt			: RETURN expr ";" {$$ = new ReturnStatement($2);};
+return_stmt			: RETURN expr ";"
+                    {
+                        $$ = new ReturnStatement($2);
+                    };
 
 expr				: expr '+' factor {$$ = new OperatorNode($1, $3, "ADD");}
 					| expr '-' factor {$$ = new OperatorNode($1, $3, "SUB");}
@@ -283,8 +284,64 @@ postfix_expr		: '(' expr ')' {$$ = $2;}
 					}
 					| INTLITERAL  {$$ = new ExpressionNode($1, "INT");}
 					| FLOATLITERAL {$$ = new ExpressionNode($1, "FLOAT");}
-					| id '(' expr_list ')' {$$ = new ExpressionNode();}
-					| id '(' ')' {$$ = new ExpressionNode();};
+					| id '(' expr_list ')' 
+					{
+						string str($1); 
+						size_t pos = str.find("("); 
+						str.erase(pos); 
+						vector<struct symbol*>::iterator iter;
+						for(iter = global_symbol->children.begin(); iter != global_symbol->children.end(); ++iter)
+						{
+							if((*iter)->name == str)
+							{
+								break;
+							}
+						}
+						if (iter == global_symbol->children.end())
+						{
+							printf("Can\'t find certain function!\n");
+							exit(0);
+						}
+						vector<string> var_name;
+						list<ExpressionNode*> *pExpList = $3->pExpNodes;
+						list<ExpressionNode*>::iterator iterL;
+						vector<variable*>::iterator iterV;
+						for(iterL = pExpList->begin(); iterL != pExpList->end(); ++iterL)
+						{
+							for(iterV = current_symbol->var.begin(); iterV != current_symbol->var.end(); ++iterV)
+							{
+								if((*iterV)->irname == (*iterL)->ir.op3)
+								{
+									string name((*iterV)->irname);
+									var_name.push_back(name);
+									break;
+								}
+							}
+						}
+						$$ = new ExpressionNode((*iter), current_symbol, var_name);
+					}
+					| id '(' ')' 
+					{
+						string str($1); 
+						size_t pos = str.find("("); 
+						str.erase(pos); 
+						vector<struct symbol*>::iterator iter;
+						for(iter = global_symbol->children.begin(); iter != global_symbol->children.end(); ++iter)
+						{
+							if((*iter)->name == str)
+							{
+								break;
+							}
+						}
+						if (iter == global_symbol->children.end())
+						{
+							printf("Can\'t find certain function!\n");
+							exit(0);
+						}
+
+						vector<string> var_name;
+						$$ = new ExpressionNode((*iter), current_symbol, var_name);
+					};
 expr_list			: expr expr_list_tail {$2->pExpNodes->push_front($1);$$ = $2;};
 expr_list_tail		: ',' expr expr_list_tail {$3->pExpNodes->push_front($2);$$ = $3;}
 					| {$$ = new ExpressionNodeList(new list<ExpressionNode*>());};
@@ -447,7 +504,7 @@ void process_read(list<Statement*> *_pStatementList, string _var)
 		}
 		else
 		{
-			_pStatementList->push_back(new ReadStatement(info->name, info->type));
+			_pStatementList->push_back(new ReadStatement(info->irname, info->type));
 		}
 		
 		s2 = s2.substr(pos+1);
@@ -476,7 +533,7 @@ void process_write(list<Statement*> *_pStatementList, string _var)
 		}
 		else
 		{
-			_pStatementList->push_back(new WriteStatement(info->name, info->type));
+			_pStatementList->push_back(new WriteStatement(info->irname, info->type));
 		}
 		
 		s2 = s2.substr(pos+1);

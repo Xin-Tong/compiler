@@ -79,8 +79,8 @@ jsr main
 sys halt
 label add 
 link 1
-move $17 r0
-addr $18 r0
+move $18 r0
+addr $17 r0
 move r0 $-1
 move $-1 r1
 move r1 $19
@@ -88,8 +88,8 @@ unlnk
 ret
 label multiply 
 link 1
-move $17 r0
-mulr $18 r0
+move $18 r0
+mulr $17 r0
 move r0 $-1
 move $-1 r1
 move r1 $19

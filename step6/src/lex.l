@@ -40,7 +40,7 @@ WHILE		return WHILE;
 ENDWHILE	return ENDWHILE;
 CONTINUE	return CONTINUE;
 BREAK		return BREAK;
-RETURN		return RETURN;
+RETURN		{yylval.cstr = yytext; return RETURN;}
 INT			{yylval.cstr = yytext; return INT;}
 VOID		{yylval.cstr = yytext; return VOID;}
 STRING		{yylval.cstr = yytext; return STRING;}
