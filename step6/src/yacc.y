@@ -134,8 +134,8 @@ program				: PROGRAM id BN
 					{
                         string str("GLOBAL"); 
                         global_symbol = Sym_Alloc(str, NULL, "GLOBAL", "GLOBAL"); 
-						global_symbol->num_of_locals = 1;
-						global_symbol->num_of_params = 1;
+						global_symbol->num_of_locals = 0;
+						global_symbol->num_of_params = 0;
                         current_symbol = global_symbol;
 					} 
 					pgm_body END 
@@ -214,6 +214,8 @@ func_decl			: FUNCTION any_type id
 						string str($3); 
 						size_t pos = str.find(" "); 
 						str.erase(pos); 
+						pos = str.find("("); 
+						str = str.substr(0, pos);
 						$$ = new Function($7, $2, str, current_symbol);
 						current_symbol = current_symbol->father;
 					};
@@ -302,7 +304,7 @@ postfix_expr		: '(' expr ')' {$$ = $2;}
 							printf("Can\'t find certain function!\n");
 							exit(0);
 						}
-						vector<string> var_name;
+/*						vector<string> var_name;
 						list<ExpressionNode*> *pExpList = $3->pExpNodes;
 						list<ExpressionNode*>::iterator iterL;
 						vector<variable*>::iterator iterV;
@@ -318,7 +320,8 @@ postfix_expr		: '(' expr ')' {$$ = $2;}
 								}
 							}
 						}
-						$$ = new ExpressionNode((*iter), current_symbol, var_name);
+						$$ = new ExpressionNode((*iter), current_symbol, var_name);*/
+						$$ = new ExpressionNode((*iter), current_symbol, $3->pExpNodes);
 					}
 					| id '(' ')' 
 					{
@@ -339,8 +342,7 @@ postfix_expr		: '(' expr ')' {$$ = $2;}
 							exit(0);
 						}
 
-						vector<string> var_name;
-						$$ = new ExpressionNode((*iter), current_symbol, var_name);
+						$$ = new ExpressionNode((*iter), current_symbol, NULL);
 					};
 expr_list			: expr expr_list_tail {$2->pExpNodes->push_front($1);$$ = $2;};
 expr_list_tail		: ',' expr expr_list_tail {$3->pExpNodes->push_front($2);$$ = $3;}

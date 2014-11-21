@@ -17,6 +17,7 @@ static int R_NUM_BASE       =   17;
 static int L_NUM            =   0;
 
 static int global_ir_reg_count = 1;
+static int max_reg_index = 0;
 static int global_label_count = 1;
 static string whileLabelBegin;
 static string whileLabelEnd;
@@ -93,7 +94,8 @@ public:
     bool bFunction;
     struct symbol* psym;
     struct symbol* pCurrentSymp;
-    vector<string> vars;
+    list<ExpressionNode*> *pExpList;
+    vector<string> params;
 	
 	ExpressionNode()
 	{
@@ -118,12 +120,12 @@ public:
         bFunction = false;
         psym = NULL;
 	}
-    ExpressionNode(struct symbol* _psym, struct symbol* _pCurrentSymp, vector<string> _vars)
+    ExpressionNode(struct symbol* _psym, struct symbol* _pCurrentSymp, list<ExpressionNode*> *_pExpList)
     {
         bFunction = true;
         psym = _psym;
         pCurrentSymp = _pCurrentSymp;
-        vars = _vars;
+        pExpList = _pExpList;
     }
 	virtual string GenIR()
 	{
@@ -138,6 +140,15 @@ public:
                 ir.opcode = "STOREF";
             }
         }
+        else
+        {
+            list<ExpressionNode*>::iterator iterL;
+            for(iterL = pExpList->begin(); iterL != pExpList->end(); ++iterL)
+            {
+                string tmp = (*iterL)->GenIR();
+                params.push_back(tmp);
+            }
+        }
         ir.op3 = ir.get_ir_reg();
         return ir.op3;
 	}
@@ -149,11 +160,15 @@ public:
         }
         else
         {
-            cout << ";PUSH" << endl;
-            vector<string>::iterator iter;
-            for (iter = vars.begin(); iter != vars.end(); ++iter)
+            list<ExpressionNode*>::iterator iterL;
+            for(iterL = pExpList->begin(); iterL != pExpList->end(); ++iterL)
             {
-                cout << ";PUSH " << *iter << endl;
+                (*iterL)->PrintIR();
+            }
+            cout << ";PUSH" << endl;
+            for(iterL = pExpList->begin(); iterL != pExpList->end(); ++iterL)
+            {
+                cout << ";PUSH " << (*iterL)->ir.op3 << endl;
             }
             cout << ";JSR " << psym->name << endl;
             for (int i = 0; i < psym->num_of_params; i ++)
@@ -171,11 +186,15 @@ public:
         }
         else
         {
-            printf("push\n");
-            vector<string>::iterator iter;
-            for (iter = vars.begin(); iter != vars.end(); ++iter)
+            list<ExpressionNode*>::iterator iterL;
+            for(iterL = pExpList->begin(); iterL != pExpList->end(); ++iterL)
             {
-                cout << "push " << IR2Tiny(*iter) << endl;
+                (*iterL)->PrintTiny();
+            }
+            printf("push\n");
+            for(iterL = pExpList->begin(); iterL != pExpList->end(); ++iterL)
+            {
+                cout << "push " << IR2Tiny((*iterL)->ir.op3) << endl;
             }
             for (int i = 0; i < MAX_REGISTER_NUM; i ++)
             {
@@ -321,15 +340,21 @@ public:
 		string s2(ir.op2);
 		std::size_t pos = s2.find_first_of("$");
 		if(pos != string::npos)
-		{
+        {
+            stringstream ss;
+            ss << max_reg_index;
+            ss >> tmp;
+            tmp = "$T" + tmp;
+            tmp = IR2Tiny(tmp);
             s2 = IR2Tiny(ir.op2);
+            cout<<"move "<<s2<<" "<<tmp<<endl;
 			if(left->type == "INT")
-				cout<<"cmpi "<<s1<<" "<<s2<<endl;
+				cout<<"cmpi "<<s1<<" "<<tmp<<endl;
 			else if(left->type == "FLOAT")	
-				cout<<"cmpr "<<s1<<" "<<s2<<endl;
+				cout<<"cmpr "<<s1<<" "<<tmp<<endl;
 		}
 		else
-		{	
+        {
             tmp = IR2Tiny(tmp);
 			cout<<"move "<<s2<<" "<<tmp<<endl;
 			if(left->type == "INT")
@@ -841,6 +866,7 @@ class Function
 public:
     string returnType;
     string name;
+    int max_index;
     struct symbol* psym;
     list<Statement*> *pStatementsList;
     Function(list<Statement*> *_pStatementList, string _returnType, string _name, struct symbol* _psym) : pStatementsList(_pStatementList),returnType(_returnType), name(_name), psym(_psym) {}
@@ -852,6 +878,7 @@ public:
         {
             (*iter)->GenIR();
         }
+        max_index = global_ir_reg_count;
     }
     virtual void PrintIR()
     {
@@ -921,6 +948,7 @@ public:
             {
                 R_NUM = R_NUM_BASE;
             }
+            max_reg_index = (*iter)->max_index;
             (*iter)->PrintTiny();
         }
         printf("end\n");
