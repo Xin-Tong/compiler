@@ -206,17 +206,37 @@ public:
             {
                 (*iterL)->PrintIR();
             }
-            cout << ";PUSH" << endl;
+            //cout << ";PUSH" << endl;
+			p0 = new IRnodeInList;	
+			p0->node.opcode = "PUSH";		
+			IRnodeList->push_back(p0);
+			
             for(iterL = pExpList->begin(); iterL != pExpList->end(); ++iterL)
             {
-                cout << ";PUSH " << (*iterL)->ir.op3 << endl;
+                //cout << ";PUSH " << (*iterL)->ir.op3 << endl;
+				IRnodeInList* p1 = new IRnodeInList;	
+				p1->node.opcode = "PUSH";
+				p1->node.op3 = *iterL->ir.op3;
+				IRnodeList->push_back(p1);
             }
-            cout << ";JSR " << psym->name << endl;
+            //cout << ";JSR " << psym->name << endl;
+				p2 = new IRnodeInList;	
+				p2->node.opcode = "JSR";		
+				p2->node.op1 = psym->name;
+				IRnodeList->push_back(p2);
+				
             for (int i = 0; i < psym->num_of_params; i ++)
             {
-                cout << ";POP" << endl;
+                //cout << ";POP" << endl;
+				IRnodeInList* p3 = new IRnodeInList;	
+				p3->node.opcode = "POP";		
+				IRnodeList->push_back(p3);
             }
-            cout << ";POP " << ir.op3 << endl;
+            //cout << ";POP " << ir.op3 << endl;
+				finalpop = new IRnodeInList;	
+				finalpop->node.opcode = "POP";		
+				finalpop->node.op3 = ir.op3;
+				IRnodeList->push_back(finalpop);
         }
 	}
 	virtual void PrintTiny()
@@ -287,6 +307,7 @@ public:
     ExpressionNode *left;
     ExpressionNode *right;
     string cmptr, tmp;
+	IRnodeInList* pcond;
     CompareNode(ExpressionNode* _left, string _cmptr, ExpressionNode* _right) : left(_left), cmptr(_cmptr), right(_right)
     {
         type = left->type;
@@ -367,7 +388,10 @@ public:
     {
         left->PrintIR();
         right->PrintIR();
-        printf(";%s %s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op2.c_str(), ir.op3.c_str());
+        //printf(";%s %s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op2.c_str(), ir.op3.c_str());
+		pcond = new IRnodeInList;	
+		pcond->node = ir;	
+		IRnodeList->push_back(pcond);
     }
     
     virtual void PrintTiny()
@@ -428,6 +452,7 @@ class OperatorNode: public ExpressionNode
 public:
 	ExpressionNode *left;
 	ExpressionNode *right;
+	IRnodeInList *pOperator;
     string optr;
 
 	OperatorNode(ExpressionNode* _left, ExpressionNode* _right, string _optr) : left(_left), right(_right), optr(_optr)
@@ -491,7 +516,10 @@ public:
 	{
 		left->PrintIR();
 		right->PrintIR();
-		printf(";%s %s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op2.c_str(), ir.op3.c_str());
+		//printf(";%s %s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op2.c_str(), ir.op3.c_str());
+		pOperator = new IRnodeInList;	
+		pOperator->node = ir;
+		IRnodeList->push_back(pOperator);
 	}
 	virtual void PrintTiny()
 	{
@@ -551,9 +579,10 @@ public:
     virtual void PrintIR()
     {
         pExpNode->PrintIR();
-        printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op3.c_str());
+       /*  printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op3.c_str());
         printf(";%s %s $R\n", ir.opcode.c_str(), ir.op3.c_str());
-        printf(";RET\n");
+        printf(";RET\n"); */
+		//TODO
     }
     virtual void PrintTiny()
     {
