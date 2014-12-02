@@ -94,7 +94,7 @@ public:
 class IRnodeInList
 {
 public:
-	IR_node node;
+	IRNode node;
 	vector<IRnodeInList*> preList;
 	vector<IRnodeInList*> sucList;
 	
