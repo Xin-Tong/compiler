@@ -69,6 +69,18 @@ public:
 	vector<string> live_in_vec;
 	vector<string> live_out_vec;
 	
+	void output()
+	{
+		if(opcode != "")
+			cout<<opcode;
+		if(op1 != "")
+			cout<<" "<<op1;
+		if(op2 != "")
+			cout<<" "<<op2;
+		if(op3 != "")
+			cout<<" "<<op3;
+	}
+	
 	static string get_ir_reg()
 	{
 		stringstream ss; 
@@ -1065,6 +1077,56 @@ public:
         {
             pCurentSym = (*iter)->psym;
             (*iter)->PrintIR();
+        }
+		for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
+        {
+            vector<IRnodeInList*>::iterator Iter;
+			vector<IRnodeInList*>::iterator IterEnd = (*iter)->IRnodeList->end();
+			
+			for(Iter = (*iter)->IRnodeList->begin(); Iter != IterEnd-1; Iter++) 
+			{
+				IRnodeInList* p1 = *Iter;
+				Iter++;
+				IRnodeInList* p2 = *Iter;
+				Iter--;
+				
+				if(p1->node.opcode != "RET" && p1->node.opcode != "JUMP")
+				{
+					p1->sucList.push_back(p2);
+					p2->preList.push_back(p1);
+				}
+				
+				if(p1->node.opcode == "JUMP")
+				{
+					vector<IRnodeInList*>::iterator IterIn;
+					vector<IRnodeInList*>::iterator IterEndIn = (*iter)->IRnodeList->end();
+					for(IterIn = (*iter)->IRnodeList->begin(); IterIn != IterEndIn; IterIn++) 
+					{
+						if(p1->node.op1 == (*IterIn)->node.op1 && (*IterIn)->node.opcode == "LABEL")
+						{	
+							p1->sucList.push_back(*IterIn);
+							(*IterIn)->preList.push_back(p1);
+							break;
+						}	
+					}
+				}
+				
+				if(p1->node.opcode == "NE" || p1->node.opcode == "EQ"  || p1->node.opcode == "GE"
+					 || p1->node.opcode == "LE"  || p1->node.opcode == "GT"  || p1->node.opcode == "LT")
+				{
+					vector<IRnodeInList*>::iterator IterIn;
+					vector<IRnodeInList*>::iterator IterEndIn = (*iter)->IRnodeList->end();
+					for(IterIn = (*iter)->IRnodeList->begin(); IterIn != IterEndIn; IterIn++) 
+					{
+						if(p1->node.op3 == (*IterIn)->node.op1 && (*IterIn)->node.opcode == "LABEL")
+						{	
+							p1->sucList.push_back(*IterIn);
+							(*IterIn)->preList.push_back(p1);
+							break;
+						}
+					}
+				}
+			}
         }
     }
     virtual void PrintTiny()
