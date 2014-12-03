@@ -129,6 +129,7 @@ public:
     list<ExpressionNode*> *pExpList;
     vector<string> params;		
 	vector<IRnodeInList*> *IRnodeList;
+	IRnodeInList *p0, *p2, *finalpop;
 	IRnodeInList* pbase;
 	
 	ExpressionNode()
@@ -216,7 +217,7 @@ public:
                 //cout << ";PUSH " << (*iterL)->ir.op3 << endl;
 				IRnodeInList* p1 = new IRnodeInList;	
 				p1->node.opcode = "PUSH";
-				p1->node.op3 = *iterL->ir.op3;
+				p1->node.op3 = (*iterL)->ir.op3;
 				IRnodeList->push_back(p1);
             }
             //cout << ";JSR " << psym->name << endl;
@@ -549,6 +550,7 @@ class Statement
 {
 public:
     string name;
+	vector<IRnodeInList*> *IRnodeList;
 	virtual void GenIR() {}
 	virtual void PrintIR() {}
 	virtual void PrintTiny() {}
@@ -559,6 +561,7 @@ class ReturnStatement : public Statement
 public:
 	ExpressionNode *pExpNode;
     string result;
+	IRnodeInList *pStore, *pRet;
     IRNode ir;
     string temp;
 	ReturnStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
@@ -579,10 +582,19 @@ public:
     virtual void PrintIR()
     {
         pExpNode->PrintIR();
+		pStore = new IRnodeInList;
+		pStore->node.opcode = ir.opcode;
+		pStore->node.op1 = ir.op1;
+		pStore->node.op2 = "$R";
+		IRnodeList->push_back(pStore);
+		
+		pRet = new IRnodeInList;	
+		pRet->node.opcode = "RET";	
+		IRnodeList->push_back(pRet);
        /*  printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op3.c_str());
         printf(";%s %s $R\n", ir.opcode.c_str(), ir.op3.c_str());
         printf(";RET\n"); */
-		//TODO
+		
     }
     virtual void PrintTiny()
     {
@@ -600,6 +612,7 @@ public:
 	ExpressionNode *pCmpNode;
     list<Statement*> *pFuncBody;
     list<Statement*> *pElsePart; 
+	IRnodeInList *pBreak, *pContinue, *pElse, *pLabel, *pLabel1, *pLabel2, *pLabel3;
     string jmpLabel;
     IfStatement() {}
     IfStatement(ExpressionNode *_pCmpNode, list<Statement*>* _pFuncBody, list<Statement*>* _pElsePart) : pCmpNode(_pCmpNode), pFuncBody(_pFuncBody), pElsePart(_pElsePart) {}
@@ -633,35 +646,66 @@ public:
             if ((*iter)->name == "BREAK")
             {
                 printf(";JUMP %s\n", whileLabelEnd.c_str());
+				//TODO
+				pBreak = new IRnodeInList;
+				pBreak->node.opcode = "JUMP";
+				pBreak->node.op1 = whileLabelEnd;
+				IRnodeList->push_back(pBreak);
             }
             else if ((*iter)->name == "CONTINUE")
             {
-                printf(";JUMP %s\n", whileLabelEnd.c_str());
+                //printf(";JUMP %s\n", whileLabelEnd.c_str());
+				pContinue = new IRnodeInList;
+				pContinue->node.opcode = "JUMP";
+				pContinue->node.op1 = whileLabelEnd;
+				IRnodeList->push_back(pContinue);
             }
             
             (*iter)->PrintIR();
         }
         if (pElsePart->size() != 0)
         {
-            printf(";JUMP %s\n", jmpLabel.c_str());
+            //printf(";JUMP %s\n", jmpLabel.c_str());
+			pElse = new IRnodeInList;	
+			pElse->node.opcode = "JUMP";	
+			pElse->node.op1 = jmpLabel;		
+			IRnodeList->push_back(pElse);
         }
-        printf(";LABEL %s\n", pCmpNode->ir.op3.c_str());
+        //printf(";LABEL %s\n", pCmpNode->ir.op3.c_str());
+		pLabel = new IRnodeInList;	
+		pLabel->node.opcode = "LABEL";	
+		pLabel->node.op3 = pCmpNode->ir.op3;		
+		IRnodeList->push_back(pLabel);
+		
         if (pElsePart->size() != 0)
         {
             for (iter = pElsePart->begin(); iter != pElsePart->end(); iter ++)
             {
                 if ((*iter)->name == "BREAK")
                 {
-                    printf(";JUMP %s\n", whileLabelEnd.c_str());
+                    //printf(";JUMP %s\n", whileLabelEnd.c_str());
+					//TODO name
+					pLabel2 = new IRnodeInList;	
+					pLabel2->node.opcode = "LABEL";
+					pLabel2->node.op1 = whileLabelEnd;		
+					IRnodeList->push_back(pLabel2);
                 }
                 else if ((*iter)->name == "CONTINUE")
                 {
-                    printf(";JUMP %s\n", whileLabelEnd.c_str());
+                    //printf(";JUMP %s\n", whileLabelEnd.c_str());
+					pLabel3 = new IRnodeInList;	
+					pLabel3->node.opcode = "LABEL";
+					pLabel3->node.op1 = whileLabelEnd;		
+					IRnodeList->push_back(pLabel3);
                 }
                 
                 (*iter)->PrintIR();
             }
-            printf(";LABEL %s\n", jmpLabel.c_str());
+            //printf(";LABEL %s\n", jmpLabel.c_str());
+			pLabel1 = new IRnodeInList;	
+			pLabel1->node.opcode = "LABEL";
+			pLabel1->node.op1 = jmpLabel;		
+			IRnodeList->push_back(pLabel1);
         }
     }
     virtual void PrintTiny()
@@ -796,6 +840,7 @@ public:
 	string name, tmp;
 	ExpressionNode *pExpNode;
 	IRNode ir;
+	IRnodeInList* pAssign;
 	AssignStatement(string _name, ExpressionNode *_pExpNode): name(_name), pExpNode(_pExpNode) {}	
 	
 	virtual void GenIR() 
@@ -819,7 +864,10 @@ public:
 	virtual void PrintIR()
 	{
 		pExpNode->PrintIR();
-		printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op3.c_str());
+		//printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op3.c_str());
+		pAssign = new IRnodeInList;
+		pAssign->node = ir;
+		IRnodeList->push_back(pAssign);
 	}
 	virtual void PrintTiny()
 	{
@@ -846,6 +894,7 @@ public:
 	string name;
 	string type;
 	IRNode ir;
+	IRnodeInList* pRead;
 	ReadStatement(string _name, string _type): name(_name), type(_type) {}	
 	
 	virtual void GenIR()
@@ -862,7 +911,10 @@ public:
 	}
 	virtual void PrintIR()
 	{
-		printf(";%s %s\n", ir.opcode.c_str(), ir.op1.c_str());
+		//printf(";%s %s\n", ir.opcode.c_str(), ir.op1.c_str());
+		pRead = new IRnodeInList;
+		pRead->node = ir;
+		IRnodeList->push_back(pRead);
 	}
 	virtual void PrintTiny()
 	{
@@ -885,6 +937,7 @@ public:
 	string name;
 	string type;
 	IRNode ir;
+	IRnodeInList* pWrite;
 	WriteStatement(string _name, string _type): name(_name), type(_type) {}	
 	
 	virtual void GenIR()
@@ -905,7 +958,10 @@ public:
 	}
 	virtual void PrintIR()
 	{
-		printf(";%s %s\n", ir.opcode.c_str(), ir.op1.c_str());
+		//printf(";%s %s\n", ir.opcode.c_str(), ir.op1.c_str());
+		pWrite = new IRnodeInList;
+		pWrite->node = ir;
+		IRnodeList->push_back(pWrite);
 	}
 	virtual void PrintTiny()
 	{
@@ -939,21 +995,35 @@ public:
     int max_index;
     struct symbol* psym;
     list<Statement*> *pStatementsList;
-    Function(list<Statement*> *_pStatementList, string _returnType, string _name, struct symbol* _psym) : pStatementsList(_pStatementList),returnType(_returnType), name(_name), psym(_psym) {}
-    
+	vector<IRnodeInList*> *IRnodeList;
+	IRnodeInList *p1, *p2;
+    Function(list<Statement*> *_pStatementList, string _returnType, string _name, struct symbol* _psym) : pStatementsList(_pStatementList),returnType(_returnType), name(_name), psym(_psym) 
+	{
+		IRnodeList = new vector<IRnodeInList*>();
+	}
+
     virtual void GenIR()
     {
         list<Statement*>::iterator iter;
         for (iter = pStatementsList->begin(); iter != pStatementsList->end(); iter ++)
         {
             (*iter)->GenIR();
+			(*iter)->IRnodeList = IRnodeList;
         }
         max_index = global_ir_reg_count;
     }
     virtual void PrintIR()
     {
-        printf(";LABEL %s\n", name.c_str());
-        printf(";LINK\n");
+        //printf(";LABEL %s\n", name.c_str());
+		p1 = new IRnodeInList;	
+		p1->node.opcode = "LABEL";
+		p1->node.op1 = name;		
+		IRnodeList->push_back(p1);
+        //printf(";LINK\n");
+		p2 = new IRnodeInList;	
+		p2->node.opcode = "LINK";		
+		IRnodeList->push_back(p2);
+		
         list<Statement*>::iterator iter;
         for (iter = pStatementsList->begin(); iter != pStatementsList->end(); iter ++)
         {
