@@ -521,8 +521,12 @@ public:
         }
         
         ir.op1 = left->GenIR();
+		
         ir.op2 = right->GenIR();
+		
         ir.op3 = ir.get_ir_reg();
+		
+		
         return ir.op3;
     }
 	virtual void PrintIR()
@@ -1019,8 +1023,8 @@ public:
         list<Statement*>::iterator iter;
         for (iter = pStatementsList->begin(); iter != pStatementsList->end(); iter ++)
         {
-            (*iter)->GenIR();
-			(*iter)->IRnodeList = IRnodeList;
+            (*iter)->IRnodeList = IRnodeList;
+			(*iter)->GenIR();
         }
         max_index = global_ir_reg_count;
     }
@@ -1128,6 +1132,32 @@ public:
 				}
 			}
         }
+		for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++) 
+		{
+			vector<IRnodeInList*>::iterator Iter;
+			vector<IRnodeInList*>::iterator IterEnd = (*iter)->IRnodeList->end();
+			for(Iter = (*iter)->IRnodeList->begin(); Iter != IterEnd; Iter++) 
+			{				
+				cout<<";";
+				((*Iter)->node).output();
+				
+				vector<IRnodeInList*>::iterator Iter1;
+				cout<<"		{PRED nodes:";
+				for(Iter1 = (*Iter)->preList.begin(); Iter1 != (*Iter)->preList.end(); Iter1++) 
+				{
+					cout<<"	";
+					((*Iter1)->node).output();
+				}
+				cout<<"}		{SUCC nodes:";
+				for(Iter1 = (*Iter)->sucList.begin(); Iter1 != (*Iter)->sucList.end(); Iter1++) 
+				{
+					cout<<"	";
+					((*Iter1)->node).output();
+				}
+				cout<<"}";	
+				cout<<endl;
+			}
+		}
     }
     virtual void PrintTiny()
     {
