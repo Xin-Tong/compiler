@@ -159,7 +159,7 @@ program				: PROGRAM id BN
 								printf("str %s %s\n", (*iter)->name, (*iter)->value);
 							}
 						}
-						root->PrintTiny();
+//						root->PrintTiny();
 //						Print_Symbol(global_symbol);
 					};
                     //    printf("The type of variable a is %d.\n", Find_Type("a", global_symbol));};
