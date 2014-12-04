@@ -103,20 +103,20 @@ public:
 	}
 };
 
-class IRnodeInList
+class LinkedNode
 {
 public:
 	IRNode node;
-	vector<IRnodeInList*> preList;
-	vector<IRnodeInList*> sucList;
+	vector<LinkedNode*> preList;
+	vector<LinkedNode*> sucList;
 	
 	bool isleader()
 	{
 		if(node.opcode == "LABEL")
 			return true;
 		
-		vector<IRnodeInList*>::iterator it = preList.begin(); 
-		vector<IRnodeInList*>::iterator it_end = preList.end();
+		vector<LinkedNode*>::iterator it = preList.begin(); 
+		vector<LinkedNode*>::iterator it_end = preList.end();
 		for(; it != it_end; ++it)
 		{
 			if( ((*it)->node.opcode == "NE") || ((*it)->node.opcode == "EQ") || ((*it)->node.opcode == "LE") ||
@@ -140,9 +140,9 @@ public:
     struct symbol* pCurrentSymp;
     list<ExpressionNode*> *pExpList;
     vector<string> params;		
-	vector<IRnodeInList*> *IRnodeList;
-	IRnodeInList *p0, *p2, *finalpop;
-	IRnodeInList* pbase;
+	vector<LinkedNode*> *LinkedNodeVec;
+	LinkedNode *p0, *p2, *finalpop;
+	LinkedNode* pbase;
 	
 	ExpressionNode()
 	{
@@ -206,11 +206,11 @@ public:
         if (!bFunction)
         {
             //cout << ";" << ir.opcode << " " << val << " " << ir.op3 << endl;
-			pbase = new IRnodeInList;	
+			pbase = new LinkedNode;	
 			pbase->node.opcode = ir.opcode;
 			pbase->node.op1 = val;
 			pbase->node.op3 = ir.op3;	
-			IRnodeList->push_back(pbase);
+			LinkedNodeVec->push_back(pbase);
         }
         else
         {
@@ -220,36 +220,36 @@ public:
                 (*iterL)->PrintIR();
             }
             //cout << ";PUSH" << endl;
-			p0 = new IRnodeInList;	
+			p0 = new LinkedNode;	
 			p0->node.opcode = "PUSH";		
-			IRnodeList->push_back(p0);
+			LinkedNodeVec->push_back(p0);
 			
             for(iterL = pExpList->begin(); iterL != pExpList->end(); ++iterL)
             {
                 //cout << ";PUSH " << (*iterL)->ir.op3 << endl;
-				IRnodeInList* p1 = new IRnodeInList;	
+				LinkedNode* p1 = new LinkedNode;	
 				p1->node.opcode = "PUSH";
 				p1->node.op3 = (*iterL)->ir.op3;
-				IRnodeList->push_back(p1);
+				LinkedNodeVec->push_back(p1);
             }
             //cout << ";JSR " << psym->name << endl;
-				p2 = new IRnodeInList;	
+				p2 = new LinkedNode;	
 				p2->node.opcode = "JSR";		
 				p2->node.op1 = psym->name;
-				IRnodeList->push_back(p2);
+				LinkedNodeVec->push_back(p2);
 				
             for (int i = 0; i < psym->num_of_params; i ++)
             {
                 //cout << ";POP" << endl;
-				IRnodeInList* p3 = new IRnodeInList;	
+				LinkedNode* p3 = new LinkedNode;	
 				p3->node.opcode = "POP";		
-				IRnodeList->push_back(p3);
+				LinkedNodeVec->push_back(p3);
             }
             //cout << ";POP " << ir.op3 << endl;
-				finalpop = new IRnodeInList;	
+				finalpop = new LinkedNode;	
 				finalpop->node.opcode = "POP";		
 				finalpop->node.op3 = ir.op3;
-				IRnodeList->push_back(finalpop);
+				LinkedNodeVec->push_back(finalpop);
         }
 	}
 	virtual void PrintTiny()
@@ -320,7 +320,7 @@ public:
     ExpressionNode *left;
     ExpressionNode *right;
     string cmptr, tmp;
-	IRnodeInList* pcond;
+	LinkedNode* pcond;
     CompareNode(ExpressionNode* _left, string _cmptr, ExpressionNode* _right) : left(_left), cmptr(_cmptr), right(_right)
     {
         type = left->type;
@@ -402,9 +402,9 @@ public:
         left->PrintIR();
         right->PrintIR();
         //printf(";%s %s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op2.c_str(), ir.op3.c_str());
-		pcond = new IRnodeInList;	
+		pcond = new LinkedNode;	
 		pcond->node = ir;	
-		IRnodeList->push_back(pcond);
+		LinkedNodeVec->push_back(pcond);
     }
     
     virtual void PrintTiny()
@@ -465,7 +465,7 @@ class OperatorNode: public ExpressionNode
 public:
 	ExpressionNode *left;
 	ExpressionNode *right;
-	IRnodeInList *pOperator;
+	LinkedNode *pOperator;
     string optr;
 
 	OperatorNode(ExpressionNode* _left, ExpressionNode* _right, string _optr) : left(_left), right(_right), optr(_optr)
@@ -534,9 +534,9 @@ public:
 		left->PrintIR();
 		right->PrintIR();
 		//printf(";%s %s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op2.c_str(), ir.op3.c_str());
-		pOperator = new IRnodeInList;	
+		pOperator = new LinkedNode;	
 		pOperator->node = ir;
-		IRnodeList->push_back(pOperator);
+		LinkedNodeVec->push_back(pOperator);
 	}
 	virtual void PrintTiny()
 	{
@@ -566,7 +566,7 @@ class Statement
 {
 public:
     string name;
-	vector<IRnodeInList*> *IRnodeList;
+	vector<LinkedNode*> *LinkedNodeVec;
 	virtual void GenIR() {}
 	virtual void PrintIR() {}
 	virtual void PrintTiny() {}
@@ -577,7 +577,7 @@ class ReturnStatement : public Statement
 public:
 	ExpressionNode *pExpNode;
     string result;
-	IRnodeInList *pStore, *pRet;
+	LinkedNode *pStore, *pRet;
     IRNode ir;
     string temp;
 	ReturnStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
@@ -598,15 +598,15 @@ public:
     virtual void PrintIR()
     {
         pExpNode->PrintIR();
-		pStore = new IRnodeInList;
+		pStore = new LinkedNode;
 		pStore->node.opcode = ir.opcode;
 		pStore->node.op1 = ir.op1;
 		pStore->node.op2 = "$R";
-		IRnodeList->push_back(pStore);
+		LinkedNodeVec->push_back(pStore);
 		
-		pRet = new IRnodeInList;	
+		pRet = new LinkedNode;	
 		pRet->node.opcode = "RET";	
-		IRnodeList->push_back(pRet);
+		LinkedNodeVec->push_back(pRet);
        /*  printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op3.c_str());
         printf(";%s %s $R\n", ir.opcode.c_str(), ir.op3.c_str());
         printf(";RET\n"); */
@@ -628,7 +628,7 @@ public:
 	ExpressionNode *pCmpNode;
     list<Statement*> *pFuncBody;
     list<Statement*> *pElsePart; 
-	IRnodeInList *pBreak, *pContinue, *pElse, *pLabel, *pLabel1, *pLabel2, *pLabel3;
+	LinkedNode *pBreak, *pContinue, *pElse, *pLabel, *pLabel1, *pLabel2, *pLabel3;
     string jmpLabel;
     IfStatement() {}
     IfStatement(ExpressionNode *_pCmpNode, list<Statement*>* _pFuncBody, list<Statement*>* _pElsePart) : pCmpNode(_pCmpNode), pFuncBody(_pFuncBody), pElsePart(_pElsePart) {}
@@ -663,18 +663,18 @@ public:
             {
                 printf(";JUMP %s\n", whileLabelEnd.c_str());
 				//TODO
-				pBreak = new IRnodeInList;
+				pBreak = new LinkedNode;
 				pBreak->node.opcode = "JUMP";
 				pBreak->node.op1 = whileLabelEnd;
-				IRnodeList->push_back(pBreak);
+				LinkedNodeVec->push_back(pBreak);
             }
             else if ((*iter)->name == "CONTINUE")
             {
                 //printf(";JUMP %s\n", whileLabelEnd.c_str());
-				pContinue = new IRnodeInList;
+				pContinue = new LinkedNode;
 				pContinue->node.opcode = "JUMP";
 				pContinue->node.op1 = whileLabelEnd;
-				IRnodeList->push_back(pContinue);
+				LinkedNodeVec->push_back(pContinue);
             }
             
             (*iter)->PrintIR();
@@ -682,16 +682,16 @@ public:
         if (pElsePart->size() != 0)
         {
             //printf(";JUMP %s\n", jmpLabel.c_str());
-			pElse = new IRnodeInList;	
+			pElse = new LinkedNode;	
 			pElse->node.opcode = "JUMP";	
 			pElse->node.op1 = jmpLabel;		
-			IRnodeList->push_back(pElse);
+			LinkedNodeVec->push_back(pElse);
         }
         //printf(";LABEL %s\n", pCmpNode->ir.op3.c_str());
-		pLabel = new IRnodeInList;	
+		pLabel = new LinkedNode;	
 		pLabel->node.opcode = "LABEL";	
 		pLabel->node.op3 = pCmpNode->ir.op3;		
-		IRnodeList->push_back(pLabel);
+		LinkedNodeVec->push_back(pLabel);
 		
         if (pElsePart->size() != 0)
         {
@@ -701,27 +701,27 @@ public:
                 {
                     //printf(";JUMP %s\n", whileLabelEnd.c_str());
 					//TODO name
-					pLabel2 = new IRnodeInList;	
+					pLabel2 = new LinkedNode;	
 					pLabel2->node.opcode = "LABEL";
 					pLabel2->node.op1 = whileLabelEnd;		
-					IRnodeList->push_back(pLabel2);
+					LinkedNodeVec->push_back(pLabel2);
                 }
                 else if ((*iter)->name == "CONTINUE")
                 {
                     //printf(";JUMP %s\n", whileLabelEnd.c_str());
-					pLabel3 = new IRnodeInList;	
+					pLabel3 = new LinkedNode;	
 					pLabel3->node.opcode = "LABEL";
 					pLabel3->node.op1 = whileLabelEnd;		
-					IRnodeList->push_back(pLabel3);
+					LinkedNodeVec->push_back(pLabel3);
                 }
                 
                 (*iter)->PrintIR();
             }
             //printf(";LABEL %s\n", jmpLabel.c_str());
-			pLabel1 = new IRnodeInList;	
+			pLabel1 = new LinkedNode;	
 			pLabel1->node.opcode = "LABEL";
 			pLabel1->node.op1 = jmpLabel;		
-			IRnodeList->push_back(pLabel1);
+			LinkedNodeVec->push_back(pLabel1);
         }
     }
     virtual void PrintTiny()
@@ -736,7 +736,7 @@ public:
             }
             else if ((*iter)->name == "CONTINUE")
             {
-                printf("jmp %s\n", whileLabelEnd.c_str());
+                printf("jmp %s\n", whileLabelBegin.c_str());
             }
 
             (*iter)->PrintTiny();
@@ -756,7 +756,7 @@ public:
                 }
                 else if ((*iter)->name == "CONTINUE")
                 {
-                    printf("jmp %s\n", whileLabelEnd.c_str());
+                    printf("jmp %s\n", whileLabelBegin.c_str());
                 }
 
                 (*iter)->PrintTiny();
@@ -856,7 +856,7 @@ public:
 	string name, tmp;
 	ExpressionNode *pExpNode;
 	IRNode ir;
-	IRnodeInList* pAssign;
+	LinkedNode* pAssign;
 	AssignStatement(string _name, ExpressionNode *_pExpNode): name(_name), pExpNode(_pExpNode) {}	
 	
 	virtual void GenIR() 
@@ -881,9 +881,9 @@ public:
 	{
 		pExpNode->PrintIR();
 		//printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op3.c_str());
-		pAssign = new IRnodeInList;
+		pAssign = new LinkedNode;
 		pAssign->node = ir;
-		IRnodeList->push_back(pAssign);
+		LinkedNodeVec->push_back(pAssign);
 	}
 	virtual void PrintTiny()
 	{
@@ -910,7 +910,7 @@ public:
 	string name;
 	string type;
 	IRNode ir;
-	IRnodeInList* pRead;
+	LinkedNode* pRead;
 	ReadStatement(string _name, string _type): name(_name), type(_type) {}	
 	
 	virtual void GenIR()
@@ -928,9 +928,9 @@ public:
 	virtual void PrintIR()
 	{
 		//printf(";%s %s\n", ir.opcode.c_str(), ir.op1.c_str());
-		pRead = new IRnodeInList;
+		pRead = new LinkedNode;
 		pRead->node = ir;
-		IRnodeList->push_back(pRead);
+		LinkedNodeVec->push_back(pRead);
 	}
 	virtual void PrintTiny()
 	{
@@ -953,7 +953,7 @@ public:
 	string name;
 	string type;
 	IRNode ir;
-	IRnodeInList* pWrite;
+	LinkedNode* pWrite;
 	WriteStatement(string _name, string _type): name(_name), type(_type) {}	
 	
 	virtual void GenIR()
@@ -975,9 +975,9 @@ public:
 	virtual void PrintIR()
 	{
 		//printf(";%s %s\n", ir.opcode.c_str(), ir.op1.c_str());
-		pWrite = new IRnodeInList;
+		pWrite = new LinkedNode;
 		pWrite->node = ir;
-		IRnodeList->push_back(pWrite);
+		LinkedNodeVec->push_back(pWrite);
 	}
 	virtual void PrintTiny()
 	{
@@ -1011,11 +1011,11 @@ public:
     int max_index;
     struct symbol* psym;
     list<Statement*> *pStatementsList;
-	vector<IRnodeInList*> *IRnodeList;
-	IRnodeInList *p1, *p2;
+	vector<LinkedNode*> *LinkedNodeVec;
+	LinkedNode *p1, *p2;
     Function(list<Statement*> *_pStatementList, string _returnType, string _name, struct symbol* _psym) : pStatementsList(_pStatementList),returnType(_returnType), name(_name), psym(_psym) 
 	{
-		IRnodeList = new vector<IRnodeInList*>();
+		LinkedNodeVec = new vector<LinkedNode*>();
 	}
 
     virtual void GenIR()
@@ -1023,7 +1023,7 @@ public:
         list<Statement*>::iterator iter;
         for (iter = pStatementsList->begin(); iter != pStatementsList->end(); iter ++)
         {
-            (*iter)->IRnodeList = IRnodeList;
+//            (*iter)->LinkedNodeVec = LinkedNodeVec;
 			(*iter)->GenIR();
         }
         max_index = global_ir_reg_count;
@@ -1031,14 +1031,14 @@ public:
     virtual void PrintIR()
     {
         //printf(";LABEL %s\n", name.c_str());
-		p1 = new IRnodeInList;	
+		p1 = new LinkedNode;	
 		p1->node.opcode = "LABEL";
 		p1->node.op1 = name;		
-		IRnodeList->push_back(p1);
+		LinkedNodeVec->push_back(p1);
         //printf(";LINK\n");
-		p2 = new IRnodeInList;	
+		p2 = new LinkedNode;	
 		p2->node.opcode = "LINK";		
-		IRnodeList->push_back(p2);
+		LinkedNodeVec->push_back(p2);
 		
         list<Statement*>::iterator iter;
         for (iter = pStatementsList->begin(); iter != pStatementsList->end(); iter ++)
@@ -1084,14 +1084,14 @@ public:
         }
 		for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
         {
-            vector<IRnodeInList*>::iterator Iter;
-			vector<IRnodeInList*>::iterator IterEnd = (*iter)->IRnodeList->end();
+            vector<LinkedNode*>::iterator Iter;
+			vector<LinkedNode*>::iterator IterEnd = (*iter)->LinkedNodeVec->end();
 			
-			for(Iter = (*iter)->IRnodeList->begin(); Iter != IterEnd-1; Iter++) 
+			for(Iter = (*iter)->LinkedNodeVec->begin(); Iter != IterEnd-1; Iter++) 
 			{
-				IRnodeInList* p1 = *Iter;
+				LinkedNode* p1 = *Iter;
 				Iter++;
-				IRnodeInList* p2 = *Iter;
+				LinkedNode* p2 = *Iter;
 				Iter--;
 				
 				if(p1->node.opcode != "RET" && p1->node.opcode != "JUMP")
@@ -1102,9 +1102,9 @@ public:
 				
 				if(p1->node.opcode == "JUMP")
 				{
-					vector<IRnodeInList*>::iterator IterIn;
-					vector<IRnodeInList*>::iterator IterEndIn = (*iter)->IRnodeList->end();
-					for(IterIn = (*iter)->IRnodeList->begin(); IterIn != IterEndIn; IterIn++) 
+					vector<LinkedNode*>::iterator IterIn;
+					vector<LinkedNode*>::iterator IterEndIn = (*iter)->LinkedNodeVec->end();
+					for(IterIn = (*iter)->LinkedNodeVec->begin(); IterIn != IterEndIn; IterIn++) 
 					{
 						if(p1->node.op1 == (*IterIn)->node.op1 && (*IterIn)->node.opcode == "LABEL")
 						{	
@@ -1118,9 +1118,9 @@ public:
 				if(p1->node.opcode == "NE" || p1->node.opcode == "EQ"  || p1->node.opcode == "GE"
 					 || p1->node.opcode == "LE"  || p1->node.opcode == "GT"  || p1->node.opcode == "LT")
 				{
-					vector<IRnodeInList*>::iterator IterIn;
-					vector<IRnodeInList*>::iterator IterEndIn = (*iter)->IRnodeList->end();
-					for(IterIn = (*iter)->IRnodeList->begin(); IterIn != IterEndIn; IterIn++) 
+					vector<LinkedNode*>::iterator IterIn;
+					vector<LinkedNode*>::iterator IterEndIn = (*iter)->LinkedNodeVec->end();
+					for(IterIn = (*iter)->LinkedNodeVec->begin(); IterIn != IterEndIn; IterIn++) 
 					{
 						if(p1->node.op3 == (*IterIn)->node.op1 && (*IterIn)->node.opcode == "LABEL")
 						{	
@@ -1134,14 +1134,14 @@ public:
         }
 		for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++) 
 		{
-			vector<IRnodeInList*>::iterator Iter;
-			vector<IRnodeInList*>::iterator IterEnd = (*iter)->IRnodeList->end();
-			for(Iter = (*iter)->IRnodeList->begin(); Iter != IterEnd; Iter++) 
+			vector<LinkedNode*>::iterator Iter;
+			vector<LinkedNode*>::iterator IterEnd = (*iter)->LinkedNodeVec->end();
+			for(Iter = (*iter)->LinkedNodeVec->begin(); Iter != IterEnd; Iter++) 
 			{				
 				cout<<";";
 				((*Iter)->node).output();
 				
-				vector<IRnodeInList*>::iterator Iter1;
+				vector<LinkedNode*>::iterator Iter1;
 				cout<<"		{PRED nodes:";
 				for(Iter1 = (*Iter)->preList.begin(); Iter1 != (*Iter)->preList.end(); Iter1++) 
 				{
