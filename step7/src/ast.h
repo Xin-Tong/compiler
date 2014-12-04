@@ -321,6 +321,7 @@ public:
     ExpressionNode *right;
     string cmptr, tmp;
 	LinkedNode* pcond;
+	vector<LinkedNode*> *LinkedNodeVec;
     CompareNode(ExpressionNode* _left, string _cmptr, ExpressionNode* _right) : left(_left), cmptr(_cmptr), right(_right)
     {
         type = left->type;
@@ -466,6 +467,7 @@ public:
 	ExpressionNode *left;
 	ExpressionNode *right;
 	LinkedNode *pOperator;
+	vector<LinkedNode*> *LinkedNodeVec;
     string optr;
 
 	OperatorNode(ExpressionNode* _left, ExpressionNode* _right, string _optr) : left(_left), right(_right), optr(_optr)
@@ -535,7 +537,10 @@ public:
 		right->PrintIR();
 		//printf(";%s %s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op2.c_str(), ir.op3.c_str());
 		pOperator = new LinkedNode;	
-		pOperator->node = ir;
+		pOperator->node.opcode = ir.opcode;
+		pOperator->node.op1 = ir.op1;
+		pOperator->node.op2 = ir.op2;
+		pOperator->node.op3 = ir.op3;
 		LinkedNodeVec->push_back(pOperator);
 	}
 	virtual void PrintTiny()
@@ -578,6 +583,7 @@ public:
 	ExpressionNode *pExpNode;
     string result;
 	LinkedNode *pStore, *pRet;
+	vector<LinkedNode*> *LinkedNodeVec;
     IRNode ir;
     string temp;
 	ReturnStatement(ExpressionNode *_pExpNode) : pExpNode(_pExpNode) {}
@@ -627,7 +633,8 @@ class IfStatement : public Statement
 public:
 	ExpressionNode *pCmpNode;
     list<Statement*> *pFuncBody;
-    list<Statement*> *pElsePart; 
+    list<Statement*> *pElsePart;
+	vector<LinkedNode*> *LinkedNodeVec;	
 	LinkedNode *pBreak, *pContinue, *pElse, *pLabel, *pLabel1, *pLabel2, *pLabel3;
     string jmpLabel;
     IfStatement() {}
@@ -855,6 +862,7 @@ class AssignStatement : public Statement
 public:
 	string name, tmp;
 	ExpressionNode *pExpNode;
+	vector<LinkedNode*> *LinkedNodeVec;
 	IRNode ir;
 	LinkedNode* pAssign;
 	AssignStatement(string _name, ExpressionNode *_pExpNode): name(_name), pExpNode(_pExpNode) {}	
@@ -911,6 +919,7 @@ public:
 	string type;
 	IRNode ir;
 	LinkedNode* pRead;
+	vector<LinkedNode*> *LinkedNodeVec;
 	ReadStatement(string _name, string _type): name(_name), type(_type) {}	
 	
 	virtual void GenIR()
@@ -953,6 +962,7 @@ public:
 	string name;
 	string type;
 	IRNode ir;
+	vector<LinkedNode*> *LinkedNodeVec;
 	LinkedNode* pWrite;
 	WriteStatement(string _name, string _type): name(_name), type(_type) {}	
 	
