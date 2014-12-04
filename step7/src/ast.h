@@ -121,7 +121,8 @@ public:
         {
             cout << " " << node.op3;
         }
-        cout << endl;
+
+//        cout << endl;
     }
 	
 	bool isleader()
@@ -1110,6 +1111,22 @@ public:
             for (linkednodeiter = (*iter)->LinkedNodeVec->begin(); linkednodeiter != (*iter)->LinkedNodeVec->end(); linkednodeiter ++)
             {
                 (*linkednodeiter)->output();
+                
+                vector<LinkedNode*>::iterator iter;
+                cout << "		{PRED nodes:";
+                for(iter = (*linkednodeiter)->preList.begin(); iter != (*linkednodeiter)->preList.end(); iter++)
+                {
+                    cout<<"	";
+                    (*iter)->output();
+                }
+                cout<<"}		{SUCC nodes:";
+                for(iter = (*linkednodeiter)->sucList.begin(); iter != (*linkednodeiter)->sucList.end(); iter++)
+                {
+                    cout<<"	";
+                    (*iter)->output();
+                }
+                cout << "}";
+                cout << endl;
             }
         }
         
