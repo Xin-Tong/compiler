@@ -63,6 +63,74 @@ static string IR2Tiny(string ir)
     return transfered;
 }
 
+class IRnodeInList
+{
+public:
+	IR_node node;
+	vector<IRnodeInList*> preList;
+	vector<IRnodeInList*> sucList;
+	
+	bool isleader()
+	{
+		if(node.opcode == "LABEL")
+			return true;
+		
+		vector<IRnodeInList*>::iterator it = preList.begin(); 
+		vector<IRnodeInList*>::iterator it_end = preList.end();
+		for(; it != it_end; ++it)
+		{
+			if( ((*it)->node.opcode == "NE") || ((*it)->node.opcode == "EQ") || ((*it)->node.opcode == "LE") ||
+				((*it)->node.opcode == "GE") || ((*it)->node.opcode == "LT") || ((*it)->node.opcode == "GT") )
+				return true;
+		}
+		
+		return false;
+	}
+};
+
+class registers
+{
+public:
+	string r0, r1, r2, r3;
+	bool isdirty0, isdirty1, isdirty2, isdirty3;
+	
+	registers() 
+	{ 
+		r0 = r1 = r2 = r3 = "";
+		isdirty0 = isdirty1 = isdirty2 = isdirty3 = false;
+	}
+	
+	void markDirty(string rg)
+	{
+		if("r0" == rg)
+			isdirty0 = true;
+		if("r1" == rg)
+			isdirty1 = true;
+		if("r2" == rg)
+			isdirty2 = true;
+		if("r3" == rg)
+			isdirty3 = true;
+	}
+	
+	//Xin: Not sure of the input 
+	void reset(LinkedNode* p, symbol* psym, vector<LinkedNode*> *pp)
+	{
+	}
+	
+	string allocate(string rg, LinkedNode* p, symbol* psym)
+	{	
+	}	
+	
+	string ensure(string rg, LinkedNode* p, symbol* psym)
+	{
+	}
+	
+	void free(string rg, LinkedNode* p, symbol* psym)
+	{
+	}	
+}; 
+
+
 class IRNode
 {
 public:
@@ -1128,10 +1196,7 @@ public:
                 cout << "}";
                 cout << endl;
             }
-        }
-        
-        
-        
+        } 
         
 /*		for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
         {
