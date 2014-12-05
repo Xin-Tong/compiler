@@ -1242,6 +1242,20 @@ public:
                     (*iter)->output();
                 }
                 cout << "}";
+				
+				vector<string>::iterator Iter2;
+				cout<<"		{GEN:";
+				for(Iter2 = (*iter)->LinkedNode.gen_vec.begin(); Iter2 != (*iter)->LinkedNode.gen_vec.end(); Iter2++) 
+				{
+					cout<<"	"<<*Iter2;
+				}
+				cout<<"}		{KILL:";
+				for(Iter2 = (*iter)->LinkedNode.kill_vec.begin(); Iter2 != (*iter)->LinkedNode.kill_vec.end(); Iter2++) 
+				{
+					cout<<"	"<<*Iter2;
+				}
+				cout<<"}";
+				
                 cout << endl;
             }
         }
