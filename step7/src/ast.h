@@ -1174,9 +1174,9 @@ public:
 		for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
         {
             vector<LinkedNode*>::iterator Iter;
-			vector<LinkedNode*>::iterator IterEnd = (*iter)->cur_LinkedNodeVec->end();
+			vector<LinkedNode*>::iterator IterEnd = (*iter)->LinkedNodeVec->end();
 			
-			for(Iter = (*iter)->cur_LinkedNodeVec->begin(); Iter != IterEnd-1; Iter++)
+			for(Iter = (*iter)->LinkedNodeVec->begin(); Iter != IterEnd-1; Iter++)
 			{
 				LinkedNode* p1 = *Iter;
 				Iter++;
