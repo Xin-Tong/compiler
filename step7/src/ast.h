@@ -1092,6 +1092,7 @@ public:
     }
     virtual void PrintIR()
     {
+        cur_LinkedNodeVec = this->LinkedNodeVec;
         printf(";LABEL %s\n", name.c_str());
 		p1 = new LinkedNode;	
 		p1->node.opcode = "LABEL";
@@ -1110,6 +1111,7 @@ public:
     }
     virtual void PrintTiny()
     {
+        cur_LinkedNodeVec = this->LinkedNodeVec;
         printf("label %s\n", name.c_str());
         printf("link %d\n", psym->num_of_locals);
         list<Statement*>::iterator iter;
@@ -1138,30 +1140,89 @@ public:
     }
     virtual void PrintIR()
     {
-        list<Function*>::iterator iter;
-        for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
+        list<Function*>::iterator iterFunc;
+        vector<LinkedNode*>::iterator iterNode;
+        for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
         {
-            pCurentSym = (*iter)->psym;
-            (*iter)->PrintIR();
+            pCurentSym = (*iterFunc)->psym;
+            (*iterFunc)->PrintIR();
+        }
+        
+		for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
+        {
+            vector<LinkedNode*>::iterator iterAllNodesInThisFunc;
+            LinkedNode* pCurNode;
+            LinkedNode* pNextNode;
+			
+			for(iterNode = (*iterFunc)->LinkedNodeVec->begin(); iterNode != (*iterFunc)->LinkedNodeVec->end()-1; iterNode ++)
+			{
+				pCurNode = *iterNode;
+				pNextNode = *(iterNode + 1);
+                
+//                if(p1->node.opcode != "RET" && p1->node.opcode != "JUMP")
+//                printf("%s\n", pCurNode->node.opcode.c_str());
+                if(pNextNode->node.opcode != "LABEL")
+                {
+                    pNextNode->preList.push_back(pCurNode);
+                }
+                pCurNode->sucList.push_back(pNextNode);
+				
+				if(pCurNode->node.opcode == "JUMP")
+				{
+					for(iterAllNodesInThisFunc = (*iterFunc)->LinkedNodeVec->begin();
+                        iterAllNodesInThisFunc != (*iterFunc)->LinkedNodeVec->end();
+                        iterAllNodesInThisFunc ++)
+					{
+						if(pCurNode->node.op1 == (*iterAllNodesInThisFunc)->node.op1
+                           && (*iterAllNodesInThisFunc)->node.opcode == "LABEL")
+						{
+                            pCurNode->sucList.clear();
+							pCurNode->sucList.push_back(*iterAllNodesInThisFunc);
+							(*iterAllNodesInThisFunc)->preList.push_back(pCurNode);
+							break;
+						}	
+					}
+				}
+				
+				if(pCurNode->node.opcode == "NEI" || pCurNode->node.opcode == "NEF" ||
+                   pCurNode->node.opcode == "EQI" || pCurNode->node.opcode == "EQF" ||
+                   pCurNode->node.opcode == "GEI" || pCurNode->node.opcode == "GEF" ||
+                   pCurNode->node.opcode == "LEI" || pCurNode->node.opcode == "LEF" ||
+                   pCurNode->node.opcode == "GTI" || pCurNode->node.opcode == "GTF" ||
+                   pCurNode->node.opcode == "LTI" || pCurNode->node.opcode == "LTF" )
+                {
+                    for(iterAllNodesInThisFunc = (*iterFunc)->LinkedNodeVec->begin();
+                        iterAllNodesInThisFunc != (*iterFunc)->LinkedNodeVec->end();
+                        iterAllNodesInThisFunc ++)
+					{
+						if(pCurNode->node.op3 == (*iterAllNodesInThisFunc)->node.op3 &&
+                           (*iterAllNodesInThisFunc)->node.opcode == "LABEL")
+						{	
+							pCurNode->sucList.push_back(*iterAllNodesInThisFunc);
+							(*iterAllNodesInThisFunc)->preList.push_back(pCurNode);
+							break;
+						}
+					}
+				}
+			}
         }
         
         printf("Second Verify**********************************\n");
-        vector<LinkedNode*>::iterator linkednodeiter;
-        for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
+        for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
         {
-            for (linkednodeiter = (*iter)->LinkedNodeVec->begin(); linkednodeiter != (*iter)->LinkedNodeVec->end(); linkednodeiter ++)
+            for (iterNode = (*iterFunc)->LinkedNodeVec->begin(); iterNode != (*iterFunc)->LinkedNodeVec->end(); iterNode ++)
             {
-                (*linkednodeiter)->output();
+                (*iterNode)->output();
                 
                 vector<LinkedNode*>::iterator iter;
                 cout << "		{PRED nodes:";
-                for(iter = (*linkednodeiter)->preList.begin(); iter != (*linkednodeiter)->preList.end(); iter++)
+                for(iter = (*iterNode)->preList.begin(); iter != (*iterNode)->preList.end(); iter++)
                 {
                     cout<<"	";
                     (*iter)->output();
                 }
                 cout<<"}		{SUCC nodes:";
-                for(iter = (*linkednodeiter)->sucList.begin(); iter != (*linkednodeiter)->sucList.end(); iter++)
+                for(iter = (*iterNode)->sucList.begin(); iter != (*iterNode)->sucList.end(); iter++)
                 {
                     cout<<"	";
                     (*iter)->output();
@@ -1169,84 +1230,8 @@ public:
                 cout << "}";
                 cout << endl;
             }
-        } 
-        
-		for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
-        {
-            vector<LinkedNode*>::iterator Iter;
-			vector<LinkedNode*>::iterator IterEnd = (*iter)->LinkedNodeVec->end();
-			
-			for(Iter = (*iter)->LinkedNodeVec->begin(); Iter != IterEnd-1; Iter++)
-			{
-				LinkedNode* p1 = *Iter;
-				Iter++;
-				LinkedNode* p2 = *Iter;
-				Iter--;
-				
-				if(p1->node.opcode != "RET" && p1->node.opcode != "JUMP")
-				{
-					p1->sucList.push_back(p2);
-					p2->preList.push_back(p1);
-				}
-				
-				if(p1->node.opcode == "JUMP")
-				{
-					vector<LinkedNode*>::iterator IterIn;
-					vector<LinkedNode*>::iterator IterEndIn = (*iter)->LinkedNodeVec->end();
-					for(IterIn = (*iter)->LinkedNodeVec->begin(); IterIn != IterEndIn; IterIn++) 
-					{
-						if(p1->node.op1 == (*IterIn)->node.op1 && (*IterIn)->node.opcode == "LABEL")
-						{	
-							p1->sucList.push_back(*IterIn);
-							(*IterIn)->preList.push_back(p1);
-							break;
-						}	
-					}
-				}
-				
-				if(p1->node.opcode == "NE" || p1->node.opcode == "EQ"  || p1->node.opcode == "GE"
-					 || p1->node.opcode == "LE"  || p1->node.opcode == "GT"  || p1->node.opcode == "LT")
-				{
-					vector<LinkedNode*>::iterator IterIn;
-					vector<LinkedNode*>::iterator IterEndIn = (*iter)->LinkedNodeVec->end();
-					for(IterIn = (*iter)->LinkedNodeVec->begin(); IterIn != IterEndIn; IterIn++) 
-					{
-						if(p1->node.op3 == (*IterIn)->node.op1 && (*IterIn)->node.opcode == "LABEL")
-						{	
-							p1->sucList.push_back(*IterIn);
-							(*IterIn)->preList.push_back(p1);
-							break;
-						}
-					}
-				}
-			}
         }
-		/* for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++) 
-		{
-			vector<LinkedNode*>::iterator Iter;
-			vector<LinkedNode*>::iterator IterEnd = (*iter)->LinkedNodeVec->end();
-			for(Iter = (*iter)->LinkedNodeVec->begin(); Iter != IterEnd; Iter++) 
-			{				
-				cout<<";";
-				((*Iter)->node).output();
-				
-				vector<LinkedNode*>::iterator Iter1;
-				cout<<"		{PRED nodes:";
-				for(Iter1 = (*Iter)->preList.begin(); Iter1 != (*Iter)->preList.end(); Iter1++) 
-				{
-					cout<<"	";
-					((*Iter1)->node).output();
-				}
-				cout<<"}		{SUCC nodes:";
-				for(Iter1 = (*Iter)->sucList.begin(); Iter1 != (*Iter)->sucList.end(); Iter1++) 
-				{
-					cout<<"	";
-					((*Iter1)->node).output();
-				}
-				cout<<"}";	
-				cout<<endl;
-			}
-		} */
+
     }
     virtual void PrintTiny()
     {
@@ -1257,11 +1242,11 @@ public:
         }
         printf("jsr main\n");
         printf("sys halt\n");
-        list<Function*>::iterator iter;
-        for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
+        list<Function*>::iterator iterFunc;
+        for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
         {
-            pCurentSym = (*iter)->psym;
-            if ((*iter)->name != "main")
+            pCurentSym = (*iterFunc)->psym;
+            if ((*iterFunc)->name != "main")
             {
                 R_NUM = R_NUM_BASE + psym->children.size() - 1;
             }
@@ -1269,8 +1254,8 @@ public:
             {
                 R_NUM = R_NUM_BASE;
             }
-            max_reg_index = (*iter)->max_index;
-            (*iter)->PrintTiny();
+            max_reg_index = (*iterFunc)->max_index;
+            (*iterFunc)->PrintTiny();
         }
         printf("end\n");
     }
