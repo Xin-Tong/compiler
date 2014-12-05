@@ -24,6 +24,14 @@ static string whileLabelEnd;
 static int assign_id = -1;
 static struct symbol* pCurentSym = NULL;
 static int nMakeUpForTempIndex = 1;
+static string R1;
+static string R2;
+static string R3;
+static string R4;
+static string D1;
+static string D2;
+static string D3;
+static string D4;
 
 //added by Cambridge
 class LinkedNode;
@@ -169,7 +177,7 @@ public:
 	
 	bool isleader()
 	{
-		if(node.opcode == "LABEL")
+		if(node.opcode == "LABEL" || node.opcode == "JUMP")
 			return true;
 		
 		vector<LinkedNode*>::iterator it = preList.begin(); 
@@ -672,8 +680,8 @@ public:
         pStore->node.opcode = ir.opcode;
         pStore->node.op1 = ir.op3;
         pStore->node.op3 = "$R";
-		pStore->kill_vec.push_back("$R");
-		pStore->gen_vec.push_back(ir.op1);
+//		pStore->kill_vec.push_back("$R");
+		pStore->gen_vec.push_back(pStore->node.op1);
         cur_LinkedNodeVec->push_back(pStore);
         
         pRet = new LinkedNode;
@@ -1221,6 +1229,62 @@ public:
 			}
         }
         
+        for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
+        {
+            vector<LinkedNode*>::iterator iterSucList;
+            vector<string>::iterator iterCurOut;
+            vector<string>::iterator iterLiveOut;
+            vector<string>::iterator iterGen;
+            vector<string>::iterator iterKill;
+            for (iterNode = (*iterFunc)->LinkedNodeVec->end() - 1; iterNode != (*iterFunc)->LinkedNodeVec->begin(); iterNode --)
+            {
+                for (iterSucList = (*iterNode)->sucList.begin(); iterSucList != (*iterNode)->sucList.end(); iterSucList ++)
+                {
+                    for (iterLiveOut = (*iterSucList)->live_out_vec.begin(); iterLiveOut != (*iterSucList)->live_out_vec.end(); iterLiveOut ++)
+                    {
+                        for (iterCurOut = (*iterNode)->live_out_vec.begin(); iterCurOut != (*iterNode)->live_out_vec.end(); iterCurOut ++)
+                        {
+                            if (*iterCurOut == *iterLiveOut)
+                            {
+                                break;
+                            }
+                        }
+                        if (iterCurOut == (*iterNode)->live_out_vec.end())
+                        {
+                            (*iterNode)->live_out_vec.push_back(*iterLiveOut);
+                        }
+                    }
+                    
+                    for (iterGen = (*iterSucList)->gen_vec.begin(); iterGen != (*iterSucList)->gen_vec.end(); iterGen ++)
+                    {
+                        for (iterCurOut = (*iterNode)->live_out_vec.begin(); iterCurOut != (*iterNode)->live_out_vec.end(); iterCurOut ++)
+                        {
+                            if (*iterCurOut == *iterGen)
+                            {
+                                break;
+                            }
+                        }
+                        if (iterCurOut == (*iterNode)->live_out_vec.end())
+                        {
+                            (*iterNode)->live_out_vec.push_back(*iterGen);
+                        }
+                    }
+                    
+                    for (iterKill = (*iterSucList)->kill_vec.begin(); iterKill != (*iterSucList)->kill_vec.end(); iterKill ++)
+                    {
+                        for (iterCurOut = (*iterNode)->live_out_vec.begin(); iterCurOut != (*iterNode)->live_out_vec.end(); iterCurOut ++)
+                        {
+                            if (*iterCurOut == *iterKill)
+                            {
+                                iterCurOut = (*iterNode)->live_out_vec.erase(iterCurOut);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         printf("Second Verify**********************************\n");
         for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
         {
@@ -1244,7 +1308,7 @@ public:
                 cout << "}";*/
 				
 				vector<string>::iterator Iter2;
-				cout<<"     {GEN:";
+/*				cout<<"     {GEN:";
 				for(Iter2 = (*iterNode)->gen_vec.begin(); Iter2 != (*iterNode)->gen_vec.end(); Iter2++)
 				{
 					cout<<" "<<*Iter2;
@@ -1253,7 +1317,12 @@ public:
 				for(Iter2 = (*iterNode)->kill_vec.begin(); Iter2 != (*iterNode)->kill_vec.end(); Iter2++)
 				{
 					cout<<" "<<*Iter2;
-				}
+                }*/
+                cout<<"    {OUT:";
+                for(Iter2 = (*iterNode)->live_out_vec.begin(); Iter2 != (*iterNode)->live_out_vec.end(); Iter2++)
+                {
+                    cout<<" "<<*Iter2;
+                }
 				cout<<"}";
 				
                 cout << endl;
