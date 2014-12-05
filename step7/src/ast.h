@@ -1229,30 +1229,30 @@ public:
                 (*iterNode)->output();
                 
                 vector<LinkedNode*>::iterator iter;
-                cout << "		{PRED nodes:";
+ /*               cout << " {PRED nodes:";
                 for(iter = (*iterNode)->preList.begin(); iter != (*iterNode)->preList.end(); iter++)
                 {
-                    cout<<"	";
+                    cout<<" ";
                     (*iter)->output();
                 }
-                cout<<"}		{SUCC nodes:";
+                cout<<"} {SUCC nodes:";
                 for(iter = (*iterNode)->sucList.begin(); iter != (*iterNode)->sucList.end(); iter++)
                 {
-                    cout<<"	";
+                    cout<<" ";
                     (*iter)->output();
                 }
-                cout << "}";
+                cout << "}";*/
 				
 				vector<string>::iterator Iter2;
-				cout<<"		{GEN:";
-				for(Iter2 = (*iter)->LinkedNode.gen_vec.begin(); Iter2 != (*iter)->LinkedNode.gen_vec.end(); Iter2++) 
+				cout<<"     {GEN:";
+				for(Iter2 = (*iterNode)->gen_vec.begin(); Iter2 != (*iterNode)->gen_vec.end(); Iter2++)
 				{
-					cout<<"	"<<*Iter2;
+					cout<<" "<<*Iter2;
 				}
-				cout<<"}		{KILL:";
-				for(Iter2 = (*iter)->LinkedNode.kill_vec.begin(); Iter2 != (*iter)->LinkedNode.kill_vec.end(); Iter2++) 
+				cout<<"}    {KILL:";
+				for(Iter2 = (*iterNode)->kill_vec.begin(); Iter2 != (*iterNode)->kill_vec.end(); Iter2++)
 				{
-					cout<<"	"<<*Iter2;
+					cout<<" "<<*Iter2;
 				}
 				cout<<"}";
 				
