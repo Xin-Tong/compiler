@@ -262,7 +262,8 @@ public:
 			pbase = new LinkedNode;	
 			pbase->node.opcode = ir.opcode;
 			pbase->node.op1 = val;
-			pbase->node.op3 = ir.op3;	
+			pbase->node.op3 = ir.op3;
+			pbase->kill_vec.push_back(ir.op3);			
             cur_LinkedNodeVec->push_back(pbase);
         }
         else
@@ -284,6 +285,7 @@ public:
 				p1->node.opcode = "PUSH";
 				p1->node.op3 = (*iterL)->ir.op3;
 				cur_LinkedNodeVec->push_back(p1);
+				p1->gen_vec.push_back((*iterL)->ir.op3);
             }
             cout << ";JSR " << psym->name << endl;
 				p2 = new LinkedNode;	
@@ -302,6 +304,7 @@ public:
 				finalpop = new LinkedNode;	
 				finalpop->node.opcode = "POP";		
 				finalpop->node.op3 = ir.op3;
+				finalpop->kill_vec.push_back(ir.op3);
 				cur_LinkedNodeVec->push_back(finalpop);
         }
 	}
@@ -456,7 +459,9 @@ public:
         right->PrintIR();
         printf(";%s %s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op2.c_str(), ir.op3.c_str());
 		pcond = new LinkedNode;	
-		pcond->node = ir;	
+		pcond->node = ir;
+		pcond->gen_vec.push_back(ir.op1);
+		pcond->gen_vec.push_back(ir.op2);		
 		cur_LinkedNodeVec->push_back(pcond);
     }
     
@@ -574,12 +579,8 @@ public:
         }
         
         ir.op1 = left->GenIR();
-		
-        ir.op2 = right->GenIR();
-		
-        ir.op3 = ir.get_ir_reg();
-		
-		
+        ir.op2 = right->GenIR();	
+        ir.op3 = ir.get_ir_reg();	
         return ir.op3;
     }
 	virtual void PrintIR()
@@ -592,6 +593,9 @@ public:
 		pOperator->node.op1 = ir.op1;
 		pOperator->node.op2 = ir.op2;
 		pOperator->node.op3 = ir.op3;
+		pOperator->gen_vec.push_back(ir.op1);
+		pOperator->gen_vec.push_back(ir.op2);
+		pOperator->kill_vec.push_back(ir.op3);
 		cur_LinkedNodeVec->push_back(pOperator);
 	}
 	virtual void PrintTiny()
@@ -660,16 +664,22 @@ public:
         pStore->node.opcode = ir.opcode;
         pStore->node.op1 = ir.op1;
         pStore->node.op2 = ir.op3;
+		pStore->kill_vec.push_back(ir.op3);
+		pStore->gen_vec.push_back(ir.op1);
         cur_LinkedNodeVec->push_back(pStore);
         
         pStore = new LinkedNode;
         pStore->node.opcode = ir.opcode;
         pStore->node.op1 = ir.op3;
         pStore->node.op3 = "$R";
+		pStore->kill_vec.push_back("$R");
+		pStore->gen_vec.push_back(ir.op1);
         cur_LinkedNodeVec->push_back(pStore);
         
         pRet = new LinkedNode;
         pRet->node.opcode = "RET";
+		//Xin Need to gen?
+		//pRet->gen_vec.push_back("$R");
         cur_LinkedNodeVec->push_back(pRet);
         printf(";RET\n");
 		
@@ -945,6 +955,8 @@ public:
 		printf(";%s %s %s\n", ir.opcode.c_str(), ir.op1.c_str(), ir.op3.c_str());
 		pAssign = new LinkedNode;
 		pAssign->node = ir;
+		pAssign->gen_vec.push_back(ir.op1);
+		pAssign->kill_vec.push_back(ir.op3);
 		cur_LinkedNodeVec->push_back(pAssign);
 	}
 	virtual void PrintTiny()
@@ -992,6 +1004,7 @@ public:
 		printf(";%s %s\n", ir.opcode.c_str(), ir.op1.c_str());
 		pRead = new LinkedNode;
 		pRead->node = ir;
+		pRead->kill_vec.push_back(ir.op1);
 		cur_LinkedNodeVec->push_back(pRead);
 	}
 	virtual void PrintTiny()
@@ -1039,6 +1052,7 @@ public:
 		printf(";%s %s\n", ir.opcode.c_str(), ir.op1.c_str());
 		pWrite = new LinkedNode;
 		pWrite->node = ir;
+		pWrite->gen_vec.push_back(ir.op1);
 		cur_LinkedNodeVec->push_back(pWrite);
 	}
 	virtual void PrintTiny()
