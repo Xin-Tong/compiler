@@ -63,31 +63,6 @@ static string IR2Tiny(string ir)
     return transfered;
 }
 
-class IRnodeInList
-{
-public:
-	IR_node node;
-	vector<IRnodeInList*> preList;
-	vector<IRnodeInList*> sucList;
-	
-	bool isleader()
-	{
-		if(node.opcode == "LABEL")
-			return true;
-		
-		vector<IRnodeInList*>::iterator it = preList.begin(); 
-		vector<IRnodeInList*>::iterator it_end = preList.end();
-		for(; it != it_end; ++it)
-		{
-			if( ((*it)->node.opcode == "NE") || ((*it)->node.opcode == "EQ") || ((*it)->node.opcode == "LE") ||
-				((*it)->node.opcode == "GE") || ((*it)->node.opcode == "LT") || ((*it)->node.opcode == "GT") )
-				return true;
-		}
-		
-		return false;
-	}
-};
-
 class registers
 {
 public:
@@ -129,7 +104,6 @@ public:
 	{
 	}	
 }; 
-
 
 class IRNode
 {
@@ -210,7 +184,6 @@ public:
 		return false;
 	}
 };
-
 
 class ExpressionNode
 {
@@ -1198,12 +1171,12 @@ public:
             }
         } 
         
-/*		for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
+		for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++)
         {
             vector<LinkedNode*>::iterator Iter;
-			vector<LinkedNode*>::iterator IterEnd = (*iter)->LinkedNodeVec->end();
+			vector<LinkedNode*>::iterator IterEnd = (*iter)->cur_LinkedNodeVec->end();
 			
-			for(Iter = (*iter)->LinkedNodeVec->begin(); Iter != IterEnd-1; Iter++)
+			for(Iter = (*iter)->cur_LinkedNodeVec->begin(); Iter != IterEnd-1; Iter++)
 			{
 				LinkedNode* p1 = *Iter;
 				Iter++;
@@ -1248,7 +1221,7 @@ public:
 				}
 			}
         }
-		for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++) 
+		/* for (iter = pFunctionList->begin(); iter != pFunctionList->end(); iter ++) 
 		{
 			vector<LinkedNode*>::iterator Iter;
 			vector<LinkedNode*>::iterator IterEnd = (*iter)->LinkedNodeVec->end();
@@ -1273,7 +1246,7 @@ public:
 				cout<<"}";	
 				cout<<endl;
 			}
-		}*/
+		} */
     }
     virtual void PrintTiny()
     {
