@@ -96,19 +96,20 @@ public:
 	}
 	
 	//Xin: Not sure of the input 
-	void reset(LinkedNode* p, symbol* psym, vector<LinkedNode*> *pp)
+	void reset(LinkedNode* p, struct symbol* psym, vector<LinkedNode*> *pp)
 	{
+		
 	}
 	
-	string allocate(string rg, LinkedNode* p, symbol* psym)
+	string allocate(string rg, LinkedNode* p, struct symbol* psym)
 	{	
 	}	
 	
-	string ensure(string rg, LinkedNode* p, symbol* psym)
+	string ensure(string rg, LinkedNode* p, struct symbol* psym)
 	{
 	}
 	
-	void free(string rg, LinkedNode* p, symbol* psym)
+	void free(string rg, LinkedNode* p, struct symbol* psym)
 	{
 	}	
 }; 
@@ -184,8 +185,7 @@ public:
 		vector<LinkedNode*>::iterator it_end = preList.end();
 		for(; it != it_end; ++it)
 		{
-			if( ((*it)->node.opcode == "NE") || ((*it)->node.opcode == "EQ") || ((*it)->node.opcode == "LE") ||
-				((*it)->node.opcode == "GE") || ((*it)->node.opcode == "<") || ((*it)->node.opcode == ">") )
+			if( ((*it)->node.opcode == "NEI") || ((*it)->node.opcode == "NEF") || ((*it)->node.opcode == "EQI") || ((*it)->node.opcode == "EQF") || ((*it)->node.opcode == "LEI") || ((*it)->node.opcode == "LEF") || ((*it)->node.opcode == "GEI") || ((*it)->node.opcode == "GEF") || ((*it)->node.opcode == "<") || ((*it)->node.opcode == ">") )
 				return true;
 		}
 		
@@ -318,7 +318,11 @@ public:
 	}
 	virtual void PrintTiny()
 	{
-        if (!bFunction)
+        if(p0->isleader())
+		{
+			reset(p0, psym, LinkedNodeVec);
+		}
+		if (!bFunction)
         {
             cout << "move " << val << " " << IR2Tiny(ir.op3) << endl;;
         }
