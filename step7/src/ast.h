@@ -24,16 +24,15 @@ static string whileLabelEnd;
 static int assign_id = -1;
 static struct symbol* pCurentSym = NULL;
 static int nMakeUpForTempIndex = 1;
-static string R1;
-static string R2;
-static string R3;
-static string R4;
-static string D1;
-static string D2;
-static string D3;
-static string D4;
+static string r0 = "";
+static string r1 = "";
+static string r2 = "";
+static string r3 = "";
+static bool isdirty0 = true;
+static bool isdirty1 = true;
+static bool isdirty2 = true;
+static bool isdirty3 = true;
 
-//added by Cambridge
 class LinkedNode;
 static vector<LinkedNode*> *cur_LinkedNodeVec;
 
@@ -70,49 +69,6 @@ static string IR2Tiny(string ir)
     
     return transfered;
 }
-
-class registers
-{
-public:
-	string r0, r1, r2, r3;
-	bool isdirty0, isdirty1, isdirty2, isdirty3;
-	
-	registers() 
-	{ 
-		r0 = r1 = r2 = r3 = "";
-		isdirty0 = isdirty1 = isdirty2 = isdirty3 = false;
-	}
-	
-	void markDirty(string rg)
-	{
-		if("r0" == rg)
-			isdirty0 = true;
-		if("r1" == rg)
-			isdirty1 = true;
-		if("r2" == rg)
-			isdirty2 = true;
-		if("r3" == rg)
-			isdirty3 = true;
-	}
-	
-	//Xin: Not sure of the input 
-	void reset(LinkedNode* p, struct symbol* psym, vector<LinkedNode*> *pp)
-	{
-		
-	}
-	
-	string allocate(string rg, LinkedNode* p, struct symbol* psym)
-	{	
-	}	
-	
-	string ensure(string rg, LinkedNode* p, struct symbol* psym)
-	{
-	}
-	
-	void free(string rg, LinkedNode* p, struct symbol* psym)
-	{
-	}	
-}; 
 
 class IRNode
 {
@@ -192,6 +148,197 @@ public:
 		return false;
 	}
 };
+
+    static void markDirty(string rg)
+	{
+		if("r0" == rg)
+			isdirty0 = true;
+		if("r1" == rg)
+			isdirty1 = true;
+		if("r2" == rg)
+			isdirty2 = true;
+		if("r3" == rg)
+			isdirty3 = true;
+	}
+	
+	static void free(string rg, LinkedNode* p, struct symbol* psym)
+	{
+		if(rg == "r0")
+		{
+			vector<string>::iterator it = p->live_out_vec.begin();
+			vector<string>::iterator it_end = p->live_out_vec.end();
+			for(; it != it_end; ++it) 
+			{
+				if(r0 == *it) break;
+			}	
+			if(isdirty0 && (it != it_end))
+			{
+				cout<<";by free"<<endl;
+				cout<<"move r0 "<<IR2Tiny(r0)<<endl;
+			}		
+			r0 = "";
+			isdirty0 = false;
+		}
+		else if(rg == "r1")
+		{
+			vector<string>::iterator it = p->live_out_vec.begin();
+			vector<string>::iterator it_end = p->live_out_vec.end();
+			for(; it != it_end; ++it) 
+			{
+				if(r1 == *it) break;
+			}	
+			if(isdirty1 && (it != it_end))
+			{
+				cout<<";by free"<<endl;
+				cout<<"move r1 "<<IR2Tiny(r1)<<endl;
+			}		
+			r1 = "";
+			isdirty1 = false;
+		}
+		else if(rg == "r2")
+		{
+			vector<string>::iterator it = p->live_out_vec.begin();
+			vector<string>::iterator it_end = p->live_out_vec.end();
+			for(; it != it_end; ++it) 
+			{
+				if(r2 == *it) break;
+			}	
+			if(isdirty2 && (it != it_end))
+			{
+				cout<<";by free"<<endl;
+				cout<<"move r2 "<<IR2Tiny(r2)<<endl;
+			}		
+			r2 = "";
+			isdirty2 = false;
+		}
+		else if(rg == "r3")
+		{
+			vector<string>::iterator it = p->live_out_vec.begin();
+			vector<string>::iterator it_end = p->live_out_vec.end();
+			for(; it != it_end; ++it) 
+			{
+				if(r3 == *it) break;
+			}	
+			if(isdirty3 && (it != it_end))
+			{
+				cout<<";by free"<<endl;
+				cout<<"move r3 "<<IR2Tiny(r3)<<endl;
+			}		
+			r3 = "";
+			isdirty3 = false;
+		}
+	}
+
+	static void reset(LinkedNode* p, struct symbol* psym, vector<LinkedNode*> *pp)
+	{
+		vector<LinkedNode*>::iterator Iter = pp->begin();
+		Iter++;
+		vector<LinkedNode*>::iterator IterEnd = pp->end();
+		for(; Iter != IterEnd; Iter++) 
+		{
+			if(p == *Iter)
+			{
+				Iter--;
+				free("r0", *Iter, psym);
+				free("r1", *Iter, psym);
+				free("r2", *Iter, psym);
+				free("r3", *Iter, psym);
+				break;
+			}
+		}
+	}
+	
+	static string allocate(string opr, LinkedNode* p, struct symbol* psym)
+	{
+		if("" == r3)
+		{
+			r3 = opr;
+			return "r3";
+		}
+		else if("" == r2)
+		{
+			r2 = opr;
+			return "r2";
+		}
+		else if("" == r1)
+		{
+			r1 = opr;
+			return "r1";
+		}
+		else if("" == r0)
+		{
+			r0 = opr;
+			return "r0";
+		}
+		else
+		{
+			string ops[3];
+			ops[0] = p->node.op1;
+			ops[1] = p->node.op2;
+			ops[2] = p->node.op3;
+			
+			int i;
+			for(i=0; i<3; i++)
+				if(r0 == ops[i]) break;
+			
+			if(i == 3)
+			{
+				free("r0", p, psym);
+				r0 = opr;
+				return "r0";
+			}
+			
+			for(i=0; i<3; i++)
+				if(r1 == ops[i]) break;
+			
+			if(i == 3)
+			{
+				free("r1", p, psym);
+				r1 = opr;
+				return "r1";
+			}
+			
+			for(i=0; i<3; i++)
+				if(r2 == ops[i]) break;
+			
+			if(i == 3)
+			{
+				free("r2", p, psym);
+				r2 = opr;
+				return "r2";
+			}
+			
+			for(i=0; i<3; i++)
+				if(r3 == ops[i]) break;
+			
+			if(i == 3)
+			{
+				free("r3", p, psym);
+				r3 = opr;
+				return "r3";
+			}
+		}
+	}
+	
+	static string ensure(string opr, LinkedNode* p, struct symbol* psym)
+	{
+		if(opr == r0)
+			return "r0";
+		else if(opr == r1)
+			return "r1";
+		else if(opr == r2)
+			return "r2";
+		else if(opr == r3)
+			return "r3";
+		else
+		{
+			string r = allocate(opr, p, psym);
+			cout<<";by ensure"<<endl;
+			cout<<"move "<<IR2Tiny(opr)<<" "<<r<<endl;
+			return r;
+		}
+	}
+
 
 class ExpressionNode
 {
@@ -320,7 +467,7 @@ public:
 	{
         if(p0->isleader())
 		{
-			reset(p0, psym, LinkedNodeVec);
+			reset(p0, psym, cur_LinkedNodeVec);
 		}
 		if (!bFunction)
         {
