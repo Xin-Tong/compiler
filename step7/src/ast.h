@@ -11,8 +11,8 @@
 #include "symbol_table.h"
 using namespace std;
 
-static int MAX_REGISTER_NUM =   15;
-static int R_NUM            =   17;
+static int MAX_REGISTER_NUM =   4;
+static int R_NUM            =   5;
 static int R_NUM_BASE       =   17;
 static int L_NUM            =   0;
 
@@ -35,6 +35,7 @@ static bool isdirty3 = true;
 
 class LinkedNode;
 static vector<LinkedNode*> *cur_LinkedNodeVec;
+static vector<LinkedNode*>::iterator cur_LinkedNode;
 
 static string IR2Tiny(string ir)
 {
@@ -52,7 +53,7 @@ static string IR2Tiny(string ir)
     }
     else if(secondChar == "P")
     {
-        transfered_id = R_NUM - transfered_id;
+        transfered_id = R_NUM + transfered_id;
         stringstream ss;
         ss << transfered_id;
         ss >> transfered;
@@ -161,8 +162,9 @@ public:
 			isdirty3 = true;
 	}
 	
-	static void free(string rg, LinkedNode* p, struct symbol* psym)
+	static void free(string rg)
 	{
+        LinkedNode* p = *cur_LinkedNode;
 		if(rg == "r0")
 		{
 			vector<string>::iterator it = p->live_out_vec.begin();
@@ -229,9 +231,9 @@ public:
 		}
 	}
 
-	static void reset(LinkedNode* p, struct symbol* psym, vector<LinkedNode*> *pp)
+	static void reset(LinkedNode* p, vector<LinkedNode*> *pp)
 	{
-		vector<LinkedNode*>::iterator Iter = pp->begin();
+/*		vector<LinkedNode*>::iterator Iter = pp->begin();
 		Iter++;
 		vector<LinkedNode*>::iterator IterEnd = pp->end();
 		for(; Iter != IterEnd; Iter++) 
@@ -239,16 +241,16 @@ public:
 			if(p == *Iter)
 			{
 				Iter--;
-				free("r0", *Iter, psym);
-				free("r1", *Iter, psym);
-				free("r2", *Iter, psym);
-				free("r3", *Iter, psym);
+				free("r0", *Iter);
+				free("r1", *Iter);
+				free("r2", *Iter);
+				free("r3", *Iter);
 				break;
 			}
-		}
+		}*/
 	}
 	
-	static string allocate(string opr, LinkedNode* p, struct symbol* psym)
+	static string allocate(string opr)
 	{
 		if("" == r3)
 		{
@@ -272,6 +274,7 @@ public:
 		}
 		else
 		{
+            LinkedNode* p = *cur_LinkedNode;
 			string ops[3];
 			ops[0] = p->node.op1;
 			ops[1] = p->node.op2;
@@ -283,7 +286,7 @@ public:
 			
 			if(i == 3)
 			{
-				free("r0", p, psym);
+				free("r0");
 				r0 = opr;
 				return "r0";
 			}
@@ -293,7 +296,7 @@ public:
 			
 			if(i == 3)
 			{
-				free("r1", p, psym);
+				free("r1");
 				r1 = opr;
 				return "r1";
 			}
@@ -303,7 +306,7 @@ public:
 			
 			if(i == 3)
 			{
-				free("r2", p, psym);
+				free("r2");
 				r2 = opr;
 				return "r2";
 			}
@@ -313,14 +316,14 @@ public:
 			
 			if(i == 3)
 			{
-				free("r3", p, psym);
+				free("r3");
 				r3 = opr;
 				return "r3";
 			}
 		}
 	}
 	
-	static string ensure(string opr, LinkedNode* p, struct symbol* psym)
+	static string ensure(string opr)
 	{
 		if(opr == r0)
 			return "r0";
@@ -332,7 +335,7 @@ public:
 			return "r3";
 		else
 		{
-			string r = allocate(opr, p, psym);
+			string r = allocate(opr);
 			cout<<";by ensure"<<endl;
 			cout<<"move "<<IR2Tiny(opr)<<" "<<r<<endl;
 			return r;
@@ -467,23 +470,11 @@ public:
 	}
 	virtual void PrintTiny()
 	{
-		if(pbase->isleader())
-		{
-			reset(pbase, psym, cur_LinkedNodeVec);
-		}
-		string Ry = allocate(pbase->node.op3, pbase, psym);
-		cout<<";by exp_node"<<endl;			
-		cout<<"move "<<val<<" "<<Ry<<endl;	
-		markDirty(Ry);	
-		
-		if(p0->isleader())
-		{
-			reset(p0, psym, cur_LinkedNodeVec);
-		}
-		
 		if (!bFunction)
         {
-            cout << "move " << val << " " << IR2Tiny(ir.op3) << endl;;
+            string reg = ensure((*cur_LinkedNode)->node.op3);
+            cur_LinkedNode ++;
+            cout << "move " << val << " " << reg << endl;
         }
         else
         {
@@ -495,7 +486,8 @@ public:
             printf("push\n");
             for(iterL = pExpList->begin(); iterL != pExpList->end(); ++iterL)
             {
-                cout << "push " << IR2Tiny((*iterL)->ir.op3) << endl;
+                string reg = ensure((*iterL)->ir.op3);
+                cout << "push " << reg << endl;
             }
             for (int i = 0; i < MAX_REGISTER_NUM; i ++)
             {
@@ -1297,8 +1289,9 @@ public:
     virtual void PrintTiny()
     {
         cur_LinkedNodeVec = this->LinkedNodeVec;
+        cur_LinkedNode = cur_LinkedNodeVec->begin();
         printf("label %s\n", name.c_str());
-        printf("link %d\n", psym->num_of_locals);
+        printf("link %d\n", psym->num_of_locals + this->max_index - 1);
         list<Statement*>::iterator iter;
         for (iter = pStatementsList->begin(); iter != pStatementsList->end(); iter ++)
         {
@@ -1471,7 +1464,7 @@ public:
                 cout << "}";*/
 				
 				vector<string>::iterator Iter2;
-/*				cout<<"     {GEN:";
+				cout<<"     {GEN:";
 				for(Iter2 = (*iterNode)->gen_vec.begin(); Iter2 != (*iterNode)->gen_vec.end(); Iter2++)
 				{
 					cout<<" "<<*Iter2;
@@ -1480,7 +1473,8 @@ public:
 				for(Iter2 = (*iterNode)->kill_vec.begin(); Iter2 != (*iterNode)->kill_vec.end(); Iter2++)
 				{
 					cout<<" "<<*Iter2;
-                }*/
+                }
+                cout<<"}";
                 cout<<"    {OUT:";
                 for(Iter2 = (*iterNode)->live_out_vec.begin(); Iter2 != (*iterNode)->live_out_vec.end(); Iter2++)
                 {
