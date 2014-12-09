@@ -442,7 +442,7 @@ public:
 				p1->node.op3 = (*iterL)->ir.op3;
 				cur_LinkedNodeVec->push_back(p1);
 				p1->gen_vec.push_back((*iterL)->ir.op3);
-				pushList.push_back(p);
+				pushList.push_back(p1);
             }
             cout << ";JSR " << psym->name << endl;
 				p2 = new LinkedNode;	
