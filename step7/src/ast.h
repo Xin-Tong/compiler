@@ -351,8 +351,9 @@ public:
     struct symbol* pCurrentSymp;
     list<ExpressionNode*> *pExpList;
     vector<string> params;
-	LinkedNode *p0, *p2, *finalpop;
-	LinkedNode* pbase;
+	LinkedNode *p0, *p2, *finalpop, *pbase;
+	list<LinkedNode*> pushList;
+	list<LinkedNode*> popList;
 	
 	ExpressionNode()
 	{
@@ -441,6 +442,7 @@ public:
 				p1->node.op3 = (*iterL)->ir.op3;
 				cur_LinkedNodeVec->push_back(p1);
 				p1->gen_vec.push_back((*iterL)->ir.op3);
+				pushList.push_back(p);
             }
             cout << ";JSR " << psym->name << endl;
 				p2 = new LinkedNode;	
@@ -465,10 +467,20 @@ public:
 	}
 	virtual void PrintTiny()
 	{
-        if(p0->isleader())
+		if(pbase->isleader())
+		{
+			reset(pbase, psym, cur_LinkedNodeVec);
+		}
+		string Ry = allocate(pbase->node.op3, pbase, psym);
+		cout<<";by exp_node"<<endl;			
+		cout<<"move "<<val<<" "<<Ry<<endl;	
+		markDirty(Ry);	
+		
+		if(p0->isleader())
 		{
 			reset(p0, psym, cur_LinkedNodeVec);
 		}
+		
 		if (!bFunction)
         {
             cout << "move " << val << " " << IR2Tiny(ir.op3) << endl;;
