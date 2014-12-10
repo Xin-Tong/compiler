@@ -1007,6 +1007,7 @@ class WhileStatement : public Statement
 public:
     ExpressionNode *pCmpNode;
     list<Statement*> *pAug;
+	LinkedNode *pwhile, *pwhile1, *pjump, *pjump1, *pjump2;
     string whileLabel;
     WhileStatement() {}
     WhileStatement(ExpressionNode* _pCmpNode, list<Statement*> *_pAug) : pCmpNode(_pCmpNode), pAug(_pAug) {}
@@ -1027,6 +1028,11 @@ public:
     virtual void PrintIR()
     {
         printf(";LABEL %s\n", whileLabel.c_str());
+		pwhile = new LinkedNode;	
+		pwhile->node.opcode = "LABEL";
+		pwhile->node.op1 = whileLabel;		
+		cur_LinkedNodeVec->push_back(pwhile);
+		
         pCmpNode->PrintIR();
         list<Statement*>::iterator iter;
         for (iter = pAug->begin(); iter != pAug->end(); iter ++)
@@ -1034,16 +1040,33 @@ public:
             if ((*iter)->name == "BREAK")
             {
                 printf(";JUMP %s\n", pCmpNode->ir.op3.c_str());
+				pjump = new LinkedNode;	
+				pjump->node.opcode = "JUMP";
+				pjump->node.op3 = pCmpNode->ir.op3;		
+				cur_LinkedNodeVec->push_back(pjump);
             }
             else if ((*iter)->name == "CONTINUE")
             {
                 printf(";JUMP %s\n", whileLabel.c_str());
+				pjump1 = new LinkedNode;	
+				pjump1->node.opcode = "JUMP";
+				pjump1->node.op1 = whileLabel;		
+				cur_LinkedNodeVec->push_back(pjump1);
             }
             
             (*iter)->PrintIR();
         }
         printf(";JUMP %s\n", whileLabel.c_str());
+		pjump2 = new LinkedNode;	
+		pjump2->node.opcode = "JUMP";
+		pjump2->node.op1 = whileLabel;		
+		cur_LinkedNodeVec->push_back(pjump2);
+		
         printf(";LABEL %s\n", pCmpNode->ir.op3.c_str());
+		pwhile1 = new LinkedNode;	
+		pwhile1->node.opcode = "LABEL";
+		pwhile1->node.op3 = pCmpNode->ir.op3;		
+		cur_LinkedNodeVec->push_back(pwhile1);
     }
 
     virtual void PrintTiny(){
@@ -1385,71 +1408,136 @@ public:
 			}
         }
         
-        for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
-        {
-            vector<LinkedNode*>::iterator iterSucList;
-            vector<string>::iterator iterCurOut;
-            vector<string>::iterator iterLiveOut;
-            vector<string>::iterator iterGen;
-            vector<string>::iterator iterKill;
-            for (iterNode = (*iterFunc)->LinkedNodeVec->end() - 1; iterNode != (*iterFunc)->LinkedNodeVec->begin(); iterNode --)
-            {
-                for (iterSucList = (*iterNode)->sucList.begin(); iterSucList != (*iterNode)->sucList.end(); iterSucList ++)
-                {
-                    for (iterLiveOut = (*iterSucList)->live_out_vec.begin(); iterLiveOut != (*iterSucList)->live_out_vec.end(); iterLiveOut ++)
-                    {
-                        for (iterCurOut = (*iterNode)->live_out_vec.begin(); iterCurOut != (*iterNode)->live_out_vec.end(); iterCurOut ++)
-                        {
-                            if (*iterCurOut == *iterLiveOut)
-                            {
-                                break;
-                            }
-                        }
-                        if (iterCurOut == (*iterNode)->live_out_vec.end())
-                        {
-                            (*iterNode)->live_out_vec.push_back(*iterLiveOut);
-                        }
-                    }
-                    
-                    for (iterGen = (*iterSucList)->gen_vec.begin(); iterGen != (*iterSucList)->gen_vec.end(); iterGen ++)
-                    {
-                        for (iterCurOut = (*iterNode)->live_out_vec.begin(); iterCurOut != (*iterNode)->live_out_vec.end(); iterCurOut ++)
-                        {
-                            if (*iterCurOut == *iterGen)
-                            {
-                                break;
-                            }
-                        }
-                        if (iterCurOut == (*iterNode)->live_out_vec.end())
-                        {
-                            (*iterNode)->live_out_vec.push_back(*iterGen);
-                        }
-                    }
-                    
-                    for (iterKill = (*iterSucList)->kill_vec.begin(); iterKill != (*iterSucList)->kill_vec.end(); iterKill ++)
-                    {
-                        for (iterCurOut = (*iterNode)->live_out_vec.begin(); iterCurOut != (*iterNode)->live_out_vec.end(); iterCurOut ++)
-                        {
-                            if (*iterCurOut == *iterKill)
-                            {
-                                iterCurOut = (*iterNode)->live_out_vec.erase(iterCurOut);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
+        for(iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); ++iterFunc)
+		{	
+			while(1)
+			{
+				bool unchanged = true;
+				vector<LinkedNode*>::iterator iter_beg = (*iterFunc)->LinkedNodeVec->begin(); 
+				vector<LinkedNode*>::iterator iter = (*iterFunc)->LinkedNodeVec->end();
+				iter--;
+				iter_beg--;
+				for(; iter != iter_beg; --iter)
+				{
+					if((*iter)->node.opcode == "RET")
+					{
+						vector<struct variable*>::iterator iter1 = psym->var.begin(); 
+						vector<struct variable*>::iterator iter_end1 = psym->var.end();
+						for(; iter1 != iter_end1; ++iter1)
+						{	
+							string s_type = (*iter1)->type;
+							if(s_type != "STRING")
+							{
+								vector<string>::iterator it1 = (*iter)->live_out_vec.begin();
+								vector<string>::iterator it1_end = (*iter)->live_out_vec.end();
+								for(; it1 != it1_end; ++it1) 
+								{
+									if(*it1 == string((*iter1)->irname))
+										break;
+								}
+								if(it1 == it1_end)
+								{	
+									unchanged = false;
+									(*iter)->live_out_vec.push_back(string((*iter1)->irname));
+									(*iter)->live_in_vec.push_back(string((*iter1)->irname));
+								}
+							}
+						}
+						
+						vector<string>::iterator iteruse = (*iter)->gen_vec.begin();
+						vector<string>::iterator iteruse_end = (*iter)->gen_vec.end();
+						for(; iteruse != iteruse_end; ++iteruse)
+						{
+							vector<string>::iterator it1 = (*iter)->live_in_vec.begin();
+							vector<string>::iterator it1_end = (*iter)->live_in_vec.end();
+							for(; it1 != it1_end; ++it1) 
+							{
+								if(*it1 == *iteruse)
+									break;
+							}
+							
+							if(it1 == it1_end)
+								(*iter)->live_in_vec.push_back(*iteruse);
+						}	
+					}
+					else
+					{
+						vector<LinkedNode*>::iterator iter2 = (*iter)->sucList.begin();
+						vector<LinkedNode*>::iterator iter2_end = (*iter)->sucList.end();
+						for(; iter2 != iter2_end; ++iter2) 
+						{//	
+							vector<string>::iterator it = (*iter2)->live_in_vec.begin();
+							vector<string>::iterator it_end = (*iter2)->live_in_vec.end();
+							for(; it != it_end; ++it) 
+							{
+								vector<string>::iterator it1 = (*iter)->live_out_vec.begin();
+								vector<string>::iterator it1_end = (*iter)->live_out_vec.end();
+								for(; it1 != it1_end; ++it1) 
+								{
+									if(*it1 == *it)
+										break;
+								}
+								
+								if(it1 == it1_end)
+								{	
+									unchanged = false;
+									(*iter)->live_out_vec.push_back(*it);
+									(*iter)->live_in_vec.push_back(*it);
+								}
+							}
+						}//
+						
+						vector<string>::iterator it = (*iter)->kill_vec.begin();
+						vector<string>::iterator it_end = (*iter)->kill_vec.end();
+						for(; it != it_end; ++it) 
+						{
+							vector<string>::iterator it1 = (*iter)->live_in_vec.begin();
+							vector<string>::iterator it1_end = (*iter)->live_in_vec.end();
+							for(; it1 != it1_end;) 
+							{
+								if(*it1 == *it)
+								{
+									it1 = (*iter)->live_in_vec.erase(it1);
+									break;
+								}
+								else
+									it1++;
+							}
+						}
+						
+						it = (*iter)->gen_vec.begin();
+						it_end = (*iter)->gen_vec.end();
+						for(; it != it_end; ++it) 
+						{
+							vector<string>::iterator it1 = (*iter)->live_in_vec.begin();
+							vector<string>::iterator it1_end = (*iter)->live_in_vec.end();
+							for(; it1 != it1_end; ++it1) 
+							{
+								if(*it1 == *it)
+									break;
+							}
+							
+							if(it1 == it1_end)
+								(*iter)->live_in_vec.push_back(*it);
+						}
+						
+					}
+				}
+				
+				if(unchanged) break;
+			}
+		}
+		
         printf("Second Verify**********************************\n");
         for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
         {
             for (iterNode = (*iterFunc)->LinkedNodeVec->begin(); iterNode != (*iterFunc)->LinkedNodeVec->end(); iterNode ++)
             {
+				cout<<";";
                 (*iterNode)->output();
                 
                 vector<LinkedNode*>::iterator iter;
- /*               cout << " {PRED nodes:";
+                cout << " {PRED nodes:";
                 for(iter = (*iterNode)->preList.begin(); iter != (*iterNode)->preList.end(); iter++)
                 {
                     cout<<" ";
@@ -1461,7 +1549,7 @@ public:
                     cout<<" ";
                     (*iter)->output();
                 }
-                cout << "}";*/
+                cout << "}";
 				
 				vector<string>::iterator Iter2;
 				cout<<"     {GEN:";
@@ -1485,7 +1573,6 @@ public:
                 cout << endl;
             }
         }
-
     }
     virtual void PrintTiny()
     {
