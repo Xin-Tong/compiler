@@ -135,7 +135,7 @@ public:
 	
 	bool isleader()
 	{
-		if(node.opcode == "LABEL" || node.opcode == "JUMP")
+		if(node.opcode == "LABEL")
 			return true;
 		
 		vector<LinkedNode*>::iterator it = preList.begin(); 
@@ -233,7 +233,7 @@ public:
 
 	static void reset(LinkedNode* p, vector<LinkedNode*> *pp)
 	{
-/*		vector<LinkedNode*>::iterator Iter = pp->begin();
+/* 		vector<LinkedNode*>::iterator Iter = pp->begin();
 		Iter++;
 		vector<LinkedNode*>::iterator IterEnd = pp->end();
 		for(; Iter != IterEnd; Iter++) 
@@ -247,7 +247,7 @@ public:
 				free("r3", *Iter);
 				break;
 			}
-		}*/
+		} */
 	}
 	
 	static string allocate(string opr)
@@ -1528,7 +1528,7 @@ public:
 			}
 		}
 		
-        printf("Second Verify**********************************\n");
+        printf(";Second Verify**********************************\n");
         for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
         {
             for (iterNode = (*iterFunc)->LinkedNodeVec->begin(); iterNode != (*iterFunc)->LinkedNodeVec->end(); iterNode ++)
@@ -1551,7 +1551,7 @@ public:
                 }
                 cout << "}";
 				
-				vector<string>::iterator Iter2;
+				/* vector<string>::iterator Iter2;
 				cout<<"     {GEN:";
 				for(Iter2 = (*iterNode)->gen_vec.begin(); Iter2 != (*iterNode)->gen_vec.end(); Iter2++)
 				{
@@ -1568,7 +1568,7 @@ public:
                 {
                     cout<<" "<<*Iter2;
                 }
-				cout<<"}";
+				cout<<"}"; */
 				
                 cout << endl;
             }
