@@ -16,6 +16,7 @@ static int R_NUM            =   5;
 static int R_NUM_BASE       =   5;
 static int L_NUM            =   0;
 
+extern struct symbol* global_symbol;
 static int global_ir_reg_count = 1;
 static int max_reg_index = 0;
 static int global_label_count = 1;
@@ -220,7 +221,7 @@ static void check(LinkedNode* p)
     {
         if(isdirty0)
         {
-            cout<<"move r0 "<<IR2Tiny(r0)<<endl;
+            cout<<"move r0 " << IR2Tiny(r0)<<endl;
         }
         r0 = "";
         isdirty0 = false;
@@ -234,7 +235,7 @@ static void check(LinkedNode* p)
     {
         if(isdirty1)
         {
-            cout<<"move r0 "<<IR2Tiny(r1)<<endl;
+            cout<<"move r1 "<<IR2Tiny(r1)<<endl;
         }
         r1 = "";
         isdirty1 = false;
@@ -248,7 +249,7 @@ static void check(LinkedNode* p)
     {
         if(isdirty2)
         {
-            cout<<"move r0 "<<IR2Tiny(r2)<<endl;
+            cout<<"move r2 "<<IR2Tiny(r2)<<endl;
         }
         r2 = "";
         isdirty2 = false;
@@ -262,7 +263,7 @@ static void check(LinkedNode* p)
     {
         if(isdirty3)
         {
-            cout<<"move r0 "<<IR2Tiny(r3)<<endl;
+            cout<<"move r3 "<<IR2Tiny(r3)<<endl;
         }
         r3 = "";
         isdirty3 = false;
@@ -352,6 +353,12 @@ static void check(LinkedNode* p)
 	
 	static string ensure(string opr)
 	{
+        size_t found1 = opr.find("$L");
+        size_t found2 = opr.find("$P");
+        size_t found3 = opr.find("$T");
+        if((found1 == string::npos) && (found2 == string::npos) && (found3 == string::npos))
+            return opr;
+        
 		if(opr == r0)
 			return "r0";
 		else if(opr == r1)
@@ -682,17 +689,6 @@ public:
 		std::size_t pos = s2.find_first_of("$");
 		if(pos != string::npos)
         {
-/*            stringstream ss;
-            ss << max_reg_index;
-            ss >> tmp;
-            tmp = "$T" + tmp;
-            tmp = IR2Tiny(tmp);
-            s2 = IR2Tiny(ir.op2);
-            cout<<"move "<<s2<<" "<<tmp<<endl;
-			if(left->type == "INT")
-				cout<<"cmpi "<<s1<<" "<<tmp<<endl;
-			else if(left->type == "FLOAT")	
-				cout<<"cmpr "<<s1<<" "<<tmp<<endl;*/
             string reg1 = ensure(ir.op1);
             string reg2 = ensure(ir.op2);
             if(left->type == "INT")
@@ -841,7 +837,6 @@ public:
         markDirty(reg3);
         
         check(*cur_LinkedNode);
-        cout << r0 << r1 << r2 << r3 << endl;
         cur_LinkedNode ++;
         if ((*cur_LinkedNode)->isleader())
         {
@@ -1250,10 +1245,10 @@ public:
         }
         else
         {
-            cout << "Assign Need you care!" << str << endl;
-            tmp = IR2Tiny(tmp);
-		    printf("move %s r%d\n", str.c_str(), tmp.c_str());
-		    printf("move %s %s\n", tmp.c_str(), IR2Tiny(ir.op3).c_str());
+			string reg1 = ensure(tmp);
+            string reg2 = ensure(ir.op3);
+		    printf("move %s %s\n", str.c_str(), reg1.c_str());
+		    printf("move %s %s\n", reg1.c_str(), reg2.c_str());
     	}
         
         check(*cur_LinkedNode);
@@ -1374,7 +1369,7 @@ public:
 		}
         check(*cur_LinkedNode);
         cur_LinkedNode ++;
-        if ((*cur_LinkedNode)->isleader())
+        if (cur_LinkedNode != (*cur_LinkedNodeVec).end() && (*cur_LinkedNode)->isleader())
         {
             reset();
         }
@@ -1429,6 +1424,13 @@ public:
         {
             (*iter)->PrintIR();
         }
+		
+		vector<LinkedNode*>::iterator iter_rtn = cur_LinkedNodeVec->end();
+		iter_rtn --;
+		if ((*iter_rtn)->node.opcode != "RET")
+		{
+			printf(";RET\n");
+		}
     }
     virtual void PrintTiny()
     {
@@ -1443,6 +1445,14 @@ public:
         {
             (*iter)->PrintTiny();
         }
+
+		vector<LinkedNode*>::iterator iter_rtn = cur_LinkedNodeVec->end();
+		iter_rtn --;
+		if ((*iter_rtn)->node.opcode != "RET")
+		{
+			printf("unlnk\n");
+			printf("ret\n");
+		}
     }
 };
 
@@ -1651,7 +1661,7 @@ public:
 			}
 		}
 		
-/*         printf(";Second Verify**********************************\n");
+         printf(";Second Verify**********************************\n");
         for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
         {
             for (iterNode = (*iterFunc)->LinkedNodeVec->begin(); iterNode != (*iterFunc)->LinkedNodeVec->end(); iterNode ++)
@@ -1659,7 +1669,7 @@ public:
 				cout<<";";
                 (*iterNode)->output();
                 
-                vector<LinkedNode*>::iterator iter;
+/*                vector<LinkedNode*>::iterator iter;
                 cout << " {PRED nodes:";
                 for(iter = (*iterNode)->preList.begin(); iter != (*iterNode)->preList.end(); iter++)
                 {
@@ -1672,9 +1682,9 @@ public:
                     cout<<" ";
                     (*iter)->output();
                 }
-                cout << "}";
+                cout << "}";*/
 				
-				 vector<string>::iterator Iter2;
+				vector<string>::iterator Iter2;
 				cout<<"     {GEN:";
 				for(Iter2 = (*iterNode)->gen_vec.begin(); Iter2 != (*iterNode)->gen_vec.end(); Iter2++)
 				{
@@ -1695,7 +1705,7 @@ public:
 				
                 cout << endl;
             }
-        }*/
+        }
     }
     virtual void PrintTiny()
     {
