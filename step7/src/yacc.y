@@ -129,7 +129,6 @@ main(int argc, char *argv[])
 
 %%
 /* Program */
-//program           : PROGRAM id BN pgm_body END {printf("Accepted!\n");};
 program				: PROGRAM id BN 
 					{
                         string str("GLOBAL"); 
@@ -160,9 +159,7 @@ program				: PROGRAM id BN
 							}
 						}
 						root->PrintTiny();
-//						Print_Symbol(global_symbol);
 					};
-                    //    printf("The type of variable a is %d.\n", Find_Type("a", global_symbol));};
 id					: IDENTIFIER;
 pgm_body			: decl func_declarations {$$ = $2;}
 					| decl {$$ = new list<Function*>();}
@@ -220,7 +217,6 @@ func_decl			: FUNCTION any_type id
 						current_symbol = current_symbol->father;
 					};
 func_para : "(" param_decl_list ")" | "(" ")" ;
-//Xin: above differece
 
 func_body			: decl stmt_list {$$ = $2;}
 					| decl {$$ = new list<Statement*>();}
@@ -280,7 +276,6 @@ postfix_expr		: '(' expr ')' {$$ = $2;}
 						}
 						else
 						{
-//							string name(info->name);
 							string name(info->irname);
 							string type(info->type);
 							$$ = new IDNode(name, type);
@@ -469,7 +464,6 @@ void ProcessVar(string s1, struct symbol* _psym)
 	{       
 		string str_temp = s2.substr(0,found_col);
         trim(str_temp);  //remove the whitespace
-//		cout<<str_temp<<"  "<<str_type<<endl;
         Variable_Add(_psym, str_temp, str_type, "NULL", "local");
         s2 = s2.substr(found_col+1);
         found_col = s2.find(",");
@@ -490,7 +484,7 @@ void ProcessString(string s1, string s2, struct symbol* _psym)
 void process_read(list<Statement*> *_pStatementList, string _var)
 {
 	std::size_t pos = _var.find(";");
-    string s2 = _var.substr(0,pos); //remove the ;
+    string s2 = _var.substr(0,pos); 
 	pos = s2.rfind(")");
 	s2.replace(pos, string::npos, ",");
 	
@@ -519,7 +513,7 @@ void process_read(list<Statement*> *_pStatementList, string _var)
 void process_write(list<Statement*> *_pStatementList, string _var)
 {
 	std::size_t pos = _var.find(";");
-    string s2 = _var.substr(0,pos); //remove the ;
+    string s2 = _var.substr(0,pos); 
 	pos = s2.rfind(")");
 	s2.replace(pos, string::npos, ",");
 	

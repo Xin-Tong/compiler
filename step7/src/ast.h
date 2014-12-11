@@ -135,8 +135,6 @@ public:
         {
             cout << " " << node.op3;
         }
-
-//        cout << endl;
     }
 	
 	bool isleader()
@@ -687,10 +685,6 @@ public:
     {
 		left->PrintTiny();
         right->PrintTiny();
-				
-//		string s3(IR2Tiny(ir.op3));
-//		string s1(IR2Tiny(ir.op1));
-
         string s1(ir.op1);
 		string s2(ir.op2);
         string reg1;
@@ -906,14 +900,11 @@ public:
         pStore->node.opcode = ir.opcode;
         pStore->node.op1 = ir.op3;
         pStore->node.op3 = "$R";
-//		pStore->kill_vec.push_back("$R");
 		pStore->gen_vec.push_back(pStore->node.op1);
         cur_LinkedNodeVec->push_back(pStore);
         
         pRet = new LinkedNode;
         pRet->node.opcode = "RET";
-		//Xin Need to gen?
-		//pRet->gen_vec.push_back("$R");
         cur_LinkedNodeVec->push_back(pRet);
         printf(";RET\n");
 		
@@ -974,7 +965,6 @@ public:
             if ((*iter)->name == "BREAK")
             {
                 printf(";JUMP %s\n", whileLabelEnd.c_str());
-				//TODO
 				pBreak = new LinkedNode;
 				pBreak->node.opcode = "JUMP";
 				pBreak->node.op1 = whileLabelEnd;
@@ -1012,7 +1002,6 @@ public:
                 if ((*iter)->name == "BREAK")
                 {
                     printf(";JUMP %s\n", whileLabelEnd.c_str());
-					//TODO name
 					pLabel2 = new LinkedNode;	
 					pLabel2->node.opcode = "LABEL";
 					pLabel2->node.op1 = whileLabelEnd;		
@@ -1503,9 +1492,6 @@ public:
 			{
 				pCurNode = *iterNode;
 				pNextNode = *(iterNode + 1);
-                
-//                if(p1->node.opcode != "RET" && p1->node.opcode != "JUMP")
-//                printf("%s\n", pCurNode->node.opcode.c_str());
                 if(pNextNode->node.opcode != "LABEL")
                 {
                     pNextNode->preList.push_back(pCurNode);

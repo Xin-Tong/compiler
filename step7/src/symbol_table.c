@@ -13,7 +13,7 @@ struct variable* Find_Variable(string _name, struct symbol* _psym, bool _print)
 	}
     if(signal != NULL)
     {
-        return signal;    
+        return signal;
     }
 	string str_val;
 	vector<struct variable*>::iterator iter;
@@ -29,7 +29,7 @@ struct variable* Find_Variable(string _name, struct symbol* _psym, bool _print)
 			}
 		}
 	}
-	
+
 	return signal;
 }
 
@@ -43,8 +43,6 @@ struct symbol* Sym_Alloc(string _name, struct symbol* _father, string _scope, st
 		s_root->name = (char*)malloc((len+1)*sizeof(char));
 		_name.copy(s_root->name, len, 0);
 		s_root->name[len] = 0;
-//        s_root->scope = _scope;
-//        s_root->level = _level;
         s_root->children.clear();
         s_root->var.clear();
 		s_root->father = _father;
@@ -111,7 +109,6 @@ int Variable_Add(struct symbol* _psym, string _name, string _type, string _value
 			ss << _psym->num_of_params;
 			ss >> irname;
 			irname = "$P" + irname;
-//			printf("Now we have a new param named as %s\n", tinyname.c_str());
 		}
 		else if (_opt == "local")
 		{
@@ -119,10 +116,8 @@ int Variable_Add(struct symbol* _psym, string _name, string _type, string _value
 			ss << _psym->num_of_locals;
 			ss >> irname;
 			irname = "$L" + irname;
-//			printf("Now we have a new local named as %s\n", tinyname.c_str());
 		}
 	}
-	// global variable should not have tiny name
 	else
 	{
 		irname = _name;
@@ -169,7 +164,7 @@ void Print_Symbol(struct symbol* _psym)
                 Print_Symbol(*iter_sym);
             }
         }
-    }   
+    }
 }
 
 void str2pchar(string _str, char* _pchar)

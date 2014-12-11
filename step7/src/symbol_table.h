@@ -24,8 +24,6 @@ struct symbol
     char* name;
 	int num_of_locals;
 	int num_of_params;
-//    string scope;   // GLOBAL | LOCAL
-//    string level;   // PROGRAM | FUNCTION | BLOCK
     vector<struct symbol*> children;
     vector<struct variable*> var;
 };
