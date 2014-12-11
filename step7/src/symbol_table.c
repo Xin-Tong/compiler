@@ -4,7 +4,7 @@ struct variable* Find_Variable(string _name, struct symbol* _psym, bool _print)
 {
 	if(_psym == NULL)
 	{
-		return false;
+		return NULL;
 	}
 	struct variable* signal = NULL;
 	if(_psym->father != NULL)

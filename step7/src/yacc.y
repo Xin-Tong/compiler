@@ -248,8 +248,10 @@ assign_stmt			: id FZ expr ";"
 						std::size_t pos = str.find(":=");
 						string str_sub = str.substr(0, pos);
 						trim(str_sub);
+                        pos = str.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
+                        str_sub = str_sub.substr(0,pos);
 						struct variable* info = Find_Variable(str_sub, current_symbol, false);
-						$$ = new AssignStatement(info->irname, $3);
+                        $$ = new AssignStatement(info->irname, $3);
 					};
 read_stmt			: READ "(" id_list ")" ";" {$$ = new list<Statement*>(); process_read($$, $3);};
 write_stmt			: WRITE "(" id_list ")" ";" {$$ = new list<Statement*>(); process_write($$, $3);};

@@ -588,7 +588,7 @@ class CompareNode: public ExpressionNode
 public:
     ExpressionNode *left;
     ExpressionNode *right;
-    string cmptr, tmp;
+    string cmptr, tmp1, tmp2;
 	LinkedNode* pcond;
     CompareNode(ExpressionNode* _left, string _cmptr, ExpressionNode* _right) : left(_left), cmptr(_cmptr), right(_right)
     {
@@ -656,10 +656,16 @@ public:
         ir.op2 = right->GenIR();
         ir.op3 = ir.get_label();
         
-		std::size_t pos = ir.op2.find_first_of("$");
+		std::size_t pos = ir.op1.find_first_of("$");
+        if(pos == string::npos)
+        {
+            tmp1 = ir.get_ir_reg();
+        }
+
+        pos = ir.op2.find_first_of("$");
 		if(pos == string::npos)
         {
-			tmp = ir.get_ir_reg();
+			tmp2 = ir.get_ir_reg();
         }
 			
         return ir.op3;
@@ -683,28 +689,33 @@ public:
         right->PrintTiny();
 				
 //		string s3(IR2Tiny(ir.op3));
-		string s1(IR2Tiny(ir.op1));
+//		string s1(IR2Tiny(ir.op1));
 
+        string s1(ir.op1);
 		string s2(ir.op2);
+        string reg1;
+        string reg2;
 		std::size_t pos = s2.find_first_of("$");
 		if(pos != string::npos)
         {
-            string reg1 = ensure(ir.op1);
-            string reg2 = ensure(ir.op2);
-            if(left->type == "INT")
-                cout<<"cmpi "<<reg1<<" "<<reg2<<endl;
-            else if(left->type == "FLOAT")
-                cout<<"cmpr "<<reg1<<" "<<reg2<<endl;
-		}
-		else
+            reg1 = ensure(ir.op1);
+            reg2 = ensure(ir.op2);
+        }
+        else
         {
-            tmp = IR2Tiny(tmp);
-			cout<<"move "<<s2<<" "<<tmp<<endl;
-			if(left->type == "INT")
-				cout<<"cmpi "<<s1<<" "<<tmp<<endl;
-			else if(left->type == "FLOAT")	
-				cout<<"cmpr "<<s1<<" "<<tmp<<endl;
-		}
+            pos = s1.find_first_of("$");
+            if (pos == string::npos)
+            {
+                reg1 = ensure(tmp1);                
+                cout<<"move "<<s1<<" "<<reg1<<endl;
+            }
+            reg2 = ensure(tmp2);                
+            cout<<"move "<<s2<<" "<<reg2<<endl;
+        }
+        if(left->type == "INT")
+            cout<<"cmpi "<<reg1<<" "<<reg2<<endl;
+        else if(left->type == "FLOAT")
+            cout<<"cmpr "<<reg1<<" "<<reg2<<endl;
         
         reset();
     
@@ -1661,7 +1672,7 @@ public:
 			}
 		}
 		
-         printf(";Second Verify**********************************\n");
+/*         printf(";Second Verify**********************************\n");
         for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
         {
             for (iterNode = (*iterFunc)->LinkedNodeVec->begin(); iterNode != (*iterFunc)->LinkedNodeVec->end(); iterNode ++)
@@ -1669,7 +1680,7 @@ public:
 				cout<<";";
                 (*iterNode)->output();
                 
-/*                vector<LinkedNode*>::iterator iter;
+                vector<LinkedNode*>::iterator iter;
                 cout << " {PRED nodes:";
                 for(iter = (*iterNode)->preList.begin(); iter != (*iterNode)->preList.end(); iter++)
                 {
@@ -1682,7 +1693,7 @@ public:
                     cout<<" ";
                     (*iter)->output();
                 }
-                cout << "}";*/
+                cout << "}";
 				
 				vector<string>::iterator Iter2;
 				cout<<"     {GEN:";
@@ -1705,7 +1716,7 @@ public:
 				
                 cout << endl;
             }
-        }
+        }*/
     }
     virtual void PrintTiny()
     {
@@ -1720,14 +1731,6 @@ public:
         for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
         {
             pCurentSym = (*iterFunc)->psym;
-/*            if ((*iterFunc)->name != "main")
-            {
-                R_NUM = R_NUM_BASE + psym->children.size() - 1;
-            }
-            else
-            {
-                R_NUM = R_NUM_BASE;
-            }*/
             max_reg_index = (*iterFunc)->max_index;
             (*iterFunc)->PrintTiny();
         }
