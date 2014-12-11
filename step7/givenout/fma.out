@@ -1,0 +1,162 @@
+;IR code
+;LABEL add
+;LINK 
+;ADDF $P1 $P2 $T1
+;STOREF $T1 $L1
+;STOREF $L1 $T2
+;STOREF $T2 $R
+;RET
+;LABEL multiply
+;LINK 
+;MULTF $P1 $P2 $T1
+;STOREF $T1 $L1
+;STOREF $L1 $T2
+;STOREF $T2 $R
+;RET
+;LABEL main
+;LINK 
+;WRITES intro
+;WRITES first
+;READF $L1
+;WRITES second
+;READF $L2
+;WRITES third
+;READF $L3
+;PUSH 
+;PUSH $L1
+;PUSH $L2
+;JSR multiply
+;POP 
+;POP 
+;POP $T1
+;STOREF $T1 $L5
+;PUSH 
+;PUSH $L5
+;PUSH $L3
+;JSR add
+;POP 
+;POP 
+;POP $T2
+;STOREF $T2 $L4
+;WRITEF $L1
+;WRITES star
+;WRITEF $L2
+;WRITES plus
+;WRITEF $L3
+;WRITES equal
+;WRITEF $L4
+;WRITES eol
+;STOREI 0 $T3
+;STOREI $T3 $T4
+;STOREI $T4 $R
+;RET
+;tiny code
+str intro "You will be asked for three float numbers\n"
+str first "Please enter the first float number: "
+str second "Please enter the second float number: "
+str third "Please enter the third float number: "
+str eol "\n"
+str star "*"
+str plus "+"
+str equal "="
+push
+push r0
+push r1
+push r2
+push r3
+jsr main
+sys halt
+label add 
+link 5
+move $7 r0
+move $-2 r1
+move r0 r1
+move $6 r2
+addr r2 r1
+move $-1 r0
+move r1 r0
+move $-3 r1
+move r0 r1
+move r1 $8
+unlnk
+ret
+label multiply 
+link 5
+move $7 r0
+move $-2 r1
+move r0 r1
+move $6 r2
+mulr r2 r1
+move $-1 r0
+move r1 r0
+move $-3 r1
+move r0 r1
+move r1 $8
+unlnk
+ret
+label main 
+link 9
+sys writes intro
+sys writes first
+move $-1 r0
+sys readr r0 
+sys writes second
+move $-2 r1
+sys readr r1 
+sys writes third
+move $-3 r2
+sys readr r2 
+push
+push r0
+push r1
+push r0
+push r1
+push r2
+push r3
+jsr multiply
+pop r3
+pop r2
+pop r1
+pop r0
+pop
+pop
+move $-6 r3
+pop r3
+move r0 $-1
+move $-5 r0
+move r3 r0
+push
+push r0
+push r2
+push r0
+push r1
+push r2
+push r3
+jsr add
+pop r3
+pop r2
+pop r1
+pop r0
+pop
+pop
+move $-7 r0
+pop r0
+move $-4 r3
+move r0 r3
+move $-1 r0
+sys writer r0 
+sys writes star
+sys writer r1 
+sys writes plus
+sys writer r2 
+sys writes equal
+sys writer r3 
+sys writes eol
+move $-8 r0
+move 0 r0
+move $-9 r1
+move r0 r1
+move r1 $6
+unlnk
+ret
+end

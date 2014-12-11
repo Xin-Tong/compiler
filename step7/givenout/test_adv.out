@@ -1,0 +1,146 @@
+;IR code
+;LABEL main
+;LINK 
+;STOREF 0.0001 $T1
+;STOREF $T1 tolerance
+;STOREF 7.0 $T2
+;STOREF $T2 num
+;STOREF num approx
+;STOREI 0 $T3
+;STOREI $T3 count
+;STOREF 0.0 $T4
+;STOREF $T4 diff
+;STOREI 0 $T5
+;STOREI $T5 enough
+;LABEL label1
+;STOREI 1 $T6
+;EQI enough $T6 label2
+;STOREI 1 $T7
+;ADDI count $T7 $T8
+;STOREI $T8 count
+;STOREF 0.5 $T9
+;DIVF num approx $T10
+;ADDF approx $T10 $T11
+;MULTF $T9 $T11 $T12
+;STOREF $T12 newapprox
+;SUBF approx newapprox $T13
+;STOREF $T13 diff
+;STOREF 0.0 $T14
+;LEF diff $T14 label3
+;GEF diff tolerance label4
+;STOREI 1 $T15
+;STOREI $T15 enough
+;LABEL label4
+;JUMP label5
+;LABEL label3
+;STOREF 0.0 $T16
+;SUBF $T16 tolerance $T17
+;LEF diff $T17 label6
+;STOREI 1 $T18
+;STOREI $T18 enough
+;LABEL label6
+;LABEL label5
+;STOREF newapprox approx
+;JUMP label1
+;LABEL label2
+;WRITEF approx
+;WRITEI count
+;RET
+;tiny code
+var count
+var enough
+var newapprox
+var approx
+var num
+var tolerance
+var diff
+push
+push r0
+push r1
+push r2
+push r3
+jsr main
+sys halt
+label main 
+link 18
+move $-1 r0
+move 0.0001 r0
+move r0 tolerance
+move $-2 r0
+move 7.0 r0
+move r0 num
+move num r0
+move r0 approx
+move $-3 r0
+move 0 r0
+move r0 count
+move $-4 r0
+move 0.0 r0
+move r0 diff
+move $-5 r0
+move 0 r0
+move r0 enough
+label label1 
+move $-6 r0
+move 1 r0
+cmpi enough r0
+move r0 $-6
+jeq label2
+move $-7 r0
+move 1 r0
+move $-8 r1
+move count r1
+addi r0 r1
+move r1 count
+move $-9 r0
+move 0.5 r0
+move $-10 r1
+move num r1
+divr approx r1
+move $-11 r2
+move approx r2
+addr r1 r2
+move $-12 r1
+move r0 r1
+mulr r2 r1
+move r1 newapprox
+move $-13 r0
+move approx r0
+subr newapprox r0
+move r0 diff
+move $-14 r0
+move 0.0 r0
+cmpr diff r0
+move r0 $-14
+jle label3
+move tolerance r0
+cmpr diff r0
+jge label4
+move $-15 r0
+move 1 r0
+move r0 enough
+label label4 
+jmp label5 
+label label3 
+move $-16 r0
+move 0.0 r0
+move $-17 r1
+move r0 r1
+subr tolerance r1
+cmpr diff r1
+move r1 $-17
+jle label6
+move $-18 r0
+move 1 r0
+move r0 enough
+label label6 
+label label5 
+move newapprox r0
+move r0 approx
+jmp label1 
+label label2 
+sys writer approx 
+sys writei count
+unlnk
+ret
+end

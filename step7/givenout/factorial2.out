@@ -1,0 +1,176 @@
+;IR code
+;LABEL factorial
+;LINK 
+;STOREI 1 $T1
+;NEI $P1 $T1 label1
+;STOREI 1 $T2
+;STOREI $T2 $T3
+;STOREI $T3 $R
+;RET
+;JUMP label2
+;LABEL label1
+;STOREI 1 $T4
+;SUBI $P1 $T4 $T5
+;PUSH 
+;PUSH $T5
+;JSR factorial
+;POP 
+;POP $T6
+;STOREI $T6 $L2
+;MULTI $L2 $P1 $T7
+;STOREI $T7 $L1
+;LABEL label2
+;STOREI $L1 $T8
+;STOREI $T8 $R
+;RET
+;LABEL main
+;LINK 
+;WRITES input
+;READI $L1
+;STOREI 1 $T1
+;NEI $L1 $T1 label3
+;STOREI 1 $T2
+;STOREI $T2 $L2
+;LABEL label3
+;STOREI 1 $T3
+;LEI $L1 $T3 label4
+;PUSH 
+;PUSH $L1
+;JSR factorial
+;POP 
+;POP $T4
+;STOREI $T4 $L2
+;JUMP label5
+;LABEL label4
+;STOREI 0 $T5
+;STOREI $T5 $L2
+;LABEL label5
+;WRITEI $L2
+;WRITES eol
+;STOREI 0 $T6
+;STOREI $T6 $T7
+;STOREI $T7 $R
+;RET
+;tiny code
+str input "Please enter an integer number: "
+str eol "\n"
+push
+push r0
+push r1
+push r2
+push r3
+jsr main
+sys halt
+label factorial 
+link 10
+move $-3 r0
+move 1 r0
+move $6 r1
+cmpi r1 r0
+move r0 $-3
+move r1 $6
+jne label1
+move $-4 r0
+move 1 r0
+move $-5 r1
+move r0 r1
+move r1 $7
+unlnk
+ret
+jmp label2 
+label label1 
+move $-6 r0
+move 1 r0
+move $6 r1
+move $-7 r2
+move r1 r2
+subi r0 r2
+push
+push r2
+push r0
+push r1
+push r2
+push r3
+jsr factorial
+pop r3
+pop r2
+pop r1
+pop r0
+pop
+move $-8 r0
+pop r0
+move $-2 r2
+move r0 r2
+move $-9 r0
+move r2 r0
+muli r1 r0
+move $-1 r1
+move r0 r1
+move r1 $-1
+label label2 
+move $-1 r0
+move $-10 r1
+move r0 r1
+move r1 $7
+unlnk
+ret
+label main 
+link 10
+sys writes input
+move $-1 r0
+sys readi r0
+move $-3 r1
+move 1 r1
+cmpi r0 r1
+move r0 $-1
+move r1 $-3
+jne label3
+move $-4 r0
+move 1 r0
+move $-2 r1
+move r0 r1
+label label3 
+move $-5 r0
+move 1 r0
+move $-1 r1
+cmpi r1 r0
+move r0 $-5
+move r1 $-1
+jle label4
+push
+move $-1 r0
+push r0
+push r0
+push r1
+push r2
+push r3
+jsr factorial
+pop r3
+pop r2
+pop r1
+pop r0
+pop
+move $-6 r0
+pop r0
+move $-2 r1
+move r0 r1
+move r1 $-2
+jmp label5 
+label label4 
+move $-7 r0
+move 0 r0
+move $-2 r1
+move r0 r1
+move r1 $-2
+label label5 
+move $-2 r0
+sys writei r0
+sys writes eol
+move $-8 r0
+move 0 r0
+move $-9 r1
+move r0 r1
+move r1 $6
+unlnk
+ret
+end
