@@ -211,45 +211,57 @@ static void check(LinkedNode* p)
     {
         if(r0 == *iter_out_vec) break;
     }
-    if(isdirty0 && (iter_out_vec != p->live_out_vec.end()))
+    if (iter_out_vec == p->live_out_vec.end())
     {
-        cout<<"move r0 "<<IR2Tiny(r0)<<endl;
+        if(isdirty0)
+        {
+            cout<<"move r0 "<<IR2Tiny(r0)<<endl;
+        }
+        r0 = "";
+        isdirty0 = false;
     }
-    r0 = "";
-    isdirty0 = false;
     
     for(iter_out_vec = p->live_out_vec.begin(); iter_out_vec != p->live_out_vec.end(); ++ iter_out_vec)
     {
         if(r1 == *iter_out_vec) break;
     }
-    if(isdirty1 && (iter_out_vec != p->live_out_vec.end()))
+    if (iter_out_vec == p->live_out_vec.end())
     {
-        cout<<"move r1 "<<IR2Tiny(r1)<<endl;
+        if(isdirty1)
+        {
+            cout<<"move r0 "<<IR2Tiny(r1)<<endl;
+        }
+        r1 = "";
+        isdirty1 = false;
     }
-    r1 = "";
-    isdirty1 = false;
     
     for(iter_out_vec = p->live_out_vec.begin(); iter_out_vec != p->live_out_vec.end(); ++ iter_out_vec)
     {
         if(r2 == *iter_out_vec) break;
     }
-    if(isdirty2 && (iter_out_vec != p->live_out_vec.end()))
+    if (iter_out_vec == p->live_out_vec.end())
     {
-        cout<<"move r2 "<<IR2Tiny(r2)<<endl;
+        if(isdirty2)
+        {
+            cout<<"move r0 "<<IR2Tiny(r2)<<endl;
+        }
+        r2 = "";
+        isdirty2 = false;
     }
-    r2 = "";
-    isdirty2 = false;
     
     for(iter_out_vec = p->live_out_vec.begin(); iter_out_vec != p->live_out_vec.end(); ++ iter_out_vec)
     {
         if(r3 == *iter_out_vec) break;
     }
-    if(isdirty3 && (iter_out_vec != p->live_out_vec.end()))
+    if (iter_out_vec == p->live_out_vec.end())
     {
-        cout<<"move r3 "<<IR2Tiny(r3)<<endl;
+        if(isdirty3)
+        {
+            cout<<"move r0 "<<IR2Tiny(r3)<<endl;
+        }
+        r3 = "";
+        isdirty3 = false;
     }
-    r3 = "";
-    isdirty3 = false;
 }
 
     static void reset()
@@ -478,12 +490,12 @@ public:
         }
 	}
 	virtual void PrintTiny()
-	{
+    {
 		if (!bFunction)
         {
             string reg = ensure(ir.op3);
             cur_LinkedNode ++;
-            cout << "ExpNode! move " << val << " " << reg << endl;
+            cout << "move " << val << " " << reg << endl;
             markDirty(reg);
             if ((*cur_LinkedNode)->isleader())
             {
@@ -503,6 +515,7 @@ public:
             {
                 string reg = ensure((*iterL)->ir.op3);
                 cout << "push " << reg << endl;
+                check(*cur_LinkedNode);
                 cur_LinkedNode ++;
             }
             for (int i = 0; i < MAX_REGISTER_NUM; i ++)
@@ -518,9 +531,11 @@ public:
             for (int i = 0; i < psym->num_of_params; i ++)
             {
                 cout << "pop" << endl;
+                cur_LinkedNode ++;
             }
             string reg = ensure(ir.op3);
             cout << "pop " << reg << endl;
+            markDirty(reg);
             cur_LinkedNode ++;
             if ((*cur_LinkedNode)->isleader())
             {
@@ -653,7 +668,7 @@ public:
     virtual void PrintTiny()
     {
 		left->PrintTiny();
-		right->PrintTiny();
+        right->PrintTiny();
 				
 //		string s3(IR2Tiny(ir.op3));
 		string s1(IR2Tiny(ir.op1));
@@ -676,7 +691,7 @@ public:
             string reg1 = ensure(ir.op1);
             string reg2 = ensure(ir.op2);
             if(left->type == "INT")
-                cout<<"CMP!! cmpi "<<reg1<<" "<<reg2<<endl;
+                cout<<"cmpi "<<reg1<<" "<<reg2<<endl;
             else if(left->type == "FLOAT")
                 cout<<"cmpr "<<reg1<<" "<<reg2<<endl;
 		}
@@ -800,9 +815,8 @@ public:
 	virtual void PrintTiny()
 	{
 		left->PrintTiny();
-		right->PrintTiny();
-
-
+        right->PrintTiny();
+        
 		string oprtr;
 		if(ir.opcode == "ADDI")			oprtr = "addi";
 		else if (ir.opcode == "ADDF")	oprtr = "addr";
@@ -822,6 +836,7 @@ public:
         markDirty(reg3);
         
         check(*cur_LinkedNode);
+        cout << r0 << r1 << r2 << r3 << endl;
         cur_LinkedNode ++;
         if ((*cur_LinkedNode)->isleader())
         {
@@ -895,8 +910,6 @@ public:
     virtual void PrintTiny()
     {
         pExpNode->PrintTiny();
-//        printf("move %s %s\n", IR2Tiny(ir.op1).c_str(), IR2Tiny(ir.op3).c_str());
-//        printf("move %s $%d\n", IR2Tiny(ir.op3).c_str(), (int)R_NUM);
         string reg1 = ensure(ir.op1);
         string reg2 = ensure(ir.op3);
         printf("move %s %s\n", reg1.c_str(), reg2.c_str());
@@ -1036,9 +1049,11 @@ public:
         if (pElsePart->size() != 0)
         {
             reset();
+            cur_LinkedNode++;
             printf("jmp %s\n", jmpLabel.c_str());
         }
         printf("label %s\n", pCmpNode->ir.op3.c_str());
+        cur_LinkedNode++;
         if (pElsePart->size() != 0)
         {
             for (iter = pElsePart->begin(); iter != pElsePart->end(); iter ++)
@@ -1058,7 +1073,6 @@ public:
 
                 (*iter)->PrintTiny();
             }
-            // cam ?????
             printf("label %s\n", jmpLabel.c_str());
         }
     }
@@ -1132,7 +1146,9 @@ public:
 		cur_LinkedNodeVec->push_back(pwhile1);
     }
 
-    virtual void PrintTiny(){
+    virtual void PrintTiny()
+    {
+        cur_LinkedNode++;
         printf("label %s\n", whileLabel.c_str());
         pCmpNode->PrintTiny();
         list<Statement*>::iterator iter;
@@ -1140,15 +1156,22 @@ public:
         {
             if ((*iter)->name == "BREAK")
             {
+                reset();
+                cur_LinkedNode++;
                 printf("jump %s\n", pCmpNode->ir.op3.c_str());
             }
             else if ((*iter)->name == "CONTINUE")
             {
+                reset();
+                cur_LinkedNode++;
                 printf("label %s\n", whileLabel.c_str());
             }
             (*iter)->PrintTiny();
         }
+        reset();
+        cur_LinkedNode++;
         printf("jmp %s\n", whileLabel.c_str());
+        cur_LinkedNode++;
         printf("label %s\n", pCmpNode->ir.op3.c_str());
     }
 };
@@ -1210,16 +1233,14 @@ public:
 	}
 	virtual void PrintTiny()
 	{
-		pExpNode->PrintTiny();
+        pExpNode->PrintTiny();
 		string str(ir.op1);
 		std::size_t pos = str.find_first_of("1234567890");
         if(pos != string::npos)
         {
-//            str = IR2Tiny(ir.op1);
-//            printf("move %s %s\n", str.c_str(), IR2Tiny(ir.op3).c_str());
             string reg1 = ensure(ir.op1);
             string reg2 = ensure(ir.op3);
-            printf("Assign! move %s %s\n", reg1.c_str(), reg2.c_str());
+            printf("move %s %s\n", reg1.c_str(), reg2.c_str());
             markDirty(reg2);
         }
         else
@@ -1273,13 +1294,23 @@ public:
 		string str;
 		if(type == "INT")
 		{
-			str = "sys readi";
+            str = "sys readi";
+            string reg = ensure(ir.op1);
+            printf("%s %s\n", str.c_str(), reg.c_str());
+            markDirty(reg);
 		}
 		else
 		{
-			str = "sys readr";
-		}
-		printf("%s %s\n", str.c_str(), IR2Tiny(ir.op1).c_str());
+            str = "sys readr";
+            printf("%s %s\n", str.c_str(), IR2Tiny(ir.op1).c_str());
+        }
+        
+        check(*cur_LinkedNode);
+        cur_LinkedNode ++;
+        if ((*cur_LinkedNode)->isleader())
+        {
+            reset();
+        }
 	}
 };
 
@@ -1321,17 +1352,27 @@ public:
 		string str;
 		if(type == "INT")
 		{
-			str = "sys writei";
+            str = "sys writei";
+            string reg = ensure(ir.op1);
+            printf("%s %s\n", str.c_str(), reg.c_str());
 		}
 		else if(type == "FLOAT")
 		{
-			str = "sys writer";
+            str = "sys writer";
+            string reg = ensure(ir.op1);
+            printf("%s %s\n", str.c_str(), reg.c_str());
 		}
 		else
 		{
-			str = "sys writes";
+            str = "sys writes";
+            printf("%s %s\n", str.c_str(), IR2Tiny(ir.op1).c_str());;
 		}
-		printf("%s %s\n", str.c_str(), IR2Tiny(ir.op1).c_str());
+        check(*cur_LinkedNode);
+        cur_LinkedNode ++;
+        if ((*cur_LinkedNode)->isleader())
+        {
+            reset();
+        }
 	}
 };
 
@@ -1388,6 +1429,8 @@ public:
     {
         cur_LinkedNodeVec = this->LinkedNodeVec;
         cur_LinkedNode = cur_LinkedNodeVec->begin();
+        cur_LinkedNode ++;
+        cur_LinkedNode ++;
         printf("label %s\n", name.c_str());
         printf("link %d\n", psym->num_of_locals + this->max_index - 1);
         list<Statement*>::iterator iter;
@@ -1603,7 +1646,7 @@ public:
 			}
 		}
 		
-        printf(";Second Verify**********************************\n");
+/*         printf(";Second Verify**********************************\n");
         for (iterFunc = pFunctionList->begin(); iterFunc != pFunctionList->end(); iterFunc ++)
         {
             for (iterNode = (*iterFunc)->LinkedNodeVec->begin(); iterNode != (*iterFunc)->LinkedNodeVec->end(); iterNode ++)
@@ -1612,7 +1655,7 @@ public:
                 (*iterNode)->output();
                 
                 vector<LinkedNode*>::iterator iter;
-/*                cout << " {PRED nodes:";
+                cout << " {PRED nodes:";
                 for(iter = (*iterNode)->preList.begin(); iter != (*iterNode)->preList.end(); iter++)
                 {
                     cout<<" ";
@@ -1624,7 +1667,7 @@ public:
                     cout<<" ";
                     (*iter)->output();
                 }
-                cout << "}";*/
+                cout << "}";
 				
 				 vector<string>::iterator Iter2;
 				cout<<"     {GEN:";
@@ -1647,7 +1690,7 @@ public:
 				
                 cout << endl;
             }
-        }
+        }*/
     }
     virtual void PrintTiny()
     {
