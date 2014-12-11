@@ -39,7 +39,12 @@ static vector<LinkedNode*>::iterator cur_LinkedNode;
 
 static string IR2Tiny(string ir)
 {
-    string secondChar = ir.substr(1, 1);
+    size_t found1 = ir.find("$L"); 
+	size_t found2 = ir.find("$P"); 
+	size_t found3 = ir.find("$T"); 
+	if((found1 == string::npos) && (found2 == string::npos) && (found3 == string::npos))
+		return ir;
+	string secondChar = ir.substr(1, 1);
     string restchars = ir.substr(2, ir.length() - 1);
     string transfered = ir;
     int transfered_id = atoi(restchars.c_str());;
