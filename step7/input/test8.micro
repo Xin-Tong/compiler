@@ -1,0 +1,59 @@
+PROGRAM integral
+BEGIN 
+    STRING dxis := "dx = ";
+    STRING eol := "\n";
+    STRING intro := "Integrating f(x) = 8x^3 + x^2 + 9x + 5";
+    STRING ins := "Enter number of partitions to use to approximate: ";
+    STRING ins2 := "Integration range from x= ";
+    STRING ins3 := "to x= ";
+
+    FUNCTION FLOAT F (FLOAT x)
+    BEGIN
+        -- F is your function f(x) to integrate
+        RETURN x*x + 8*x*x*x + 9*x + 5;
+    END
+
+    FUNCTION FLOAT iapprox (FLOAT partcount, FLOAT range, FLOAT a, FLOAT b)
+    BEGIN
+        -- approximate by Riemann Sum (sampling left point )
+        FLOAT j;
+        FLOAT area;
+        FLOAT dx;
+
+        dx := range/partcount;
+        area := 0;
+        j := 1;
+
+        WRITE(dxis, dx, eol);
+
+        WHILE (j < partcount)
+            area := area + F(j*dx + a)*dx;
+            j := j + 1;
+        ENDWHILE
+
+        WRITE(eol);
+
+        RETURN area;
+    END
+
+    FUNCTION INT main() 
+    BEGIN 
+        FLOAT a;     
+        FLOAT x0, xf; -- integration range
+        FLOAT partcount; 
+
+        WRITE(intro,eol);
+
+        WRITE(ins2);
+        READ(x0);
+        WRITE(ins3);
+        READ(xf);
+        WRITE(ins);
+        READ(partcount);
+
+        a := iapprox(partcount, xf - x0, x0, xf);
+        
+        WRITE(a);
+        RETURN 0;
+    END 
+END
