@@ -1,3 +1,4 @@
+rm *.out
 make clean
 make
 mkdir myout
