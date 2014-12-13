@@ -1,0 +1,114 @@
+PROGRAM estimatePi
+BEGIN 
+    STRING intro := "This program estimates pi based on\na few different algorithms.\n";
+    STRING input1 := "Enter the number of iterations for Gregory and Leibniz's (at least 1000): ";
+    STRING input2 := "Enter the number of iterations for Euler's (MAX 19): ";
+    STRING input3 := "Enter the number of iterations for Gosper's (MAX 21): "; 
+    STRING eol := "\n";
+
+    FLOAT gosperConst;
+
+
+    FUNCTION FLOAT factorial(FLOAT x) 
+    BEGIN 
+        FLOAT ret,tret; 
+        IF (x = 0) 
+            RETURN 1; 
+        ELSE 
+            tret := factorial(x-1); 
+            ret := tret*x; 
+        ENDIF 
+        RETURN ret; 
+    END
+
+    FUNCTION FLOAT exponential(FLOAT x, FLOAT y) 
+    BEGIN 
+        FLOAT result; 
+        result := 1.0;
+        WHILE(y>0)
+            result := result * x;
+            y := y-1;
+        ENDWHILE 
+ 
+         
+        RETURN result; 
+    END
+
+    --Gregory and Leibniz's
+    --pi=sum(x=1-inf, ((-1)^x)/(2*x-1))
+    FUNCTION FLOAT estPIGL(FLOAT iterstop) 
+    BEGIN 
+        FLOAT result;
+        FLOAT iterant;
+        FLOAT posneg;
+ 
+        result := 0.0;
+        iterant := 1.0;
+        posneg := 1;
+        WHILE(iterant < iterstop)
+            result := result + (posneg)/(2*iterant-1);
+            iterant := iterant +1;
+            posneg := 0-posneg;
+        ENDWHILE 
+ 
+         
+        RETURN 4*result; 
+    END
+
+    --Euler's
+    --pi=sum(x=0-inf,(((x!)^2)*(2^(x+1)))/((2*x+1)!))
+    FUNCTION FLOAT estPIEU(FLOAT iterstop)
+    BEGIN
+        FLOAT result;
+        FLOAT iterant;
+
+        result := 0.0;
+        iterant := 0.0;
+        WHILE(iterant < iterstop)
+            result := result + (exponential(factorial(iterant),2)*exponential(2,iterant+1))/factorial(2*iterant+1);
+            iterant := iterant + 1;
+        ENDWHILE
+        RETURN result;
+    END
+
+    --Gosper's
+    --pi=gosperConst*sum(x=0-inf,((x!)^2)/((2*x+1)!))
+    FUNCTION FLOAT estPIGO(FLOAT iterstop)
+    BEGIN
+        FLOAT result;
+        FLOAT iterant;
+
+        result := 0.0;
+        iterant := 0.0;
+        WHILE(iterant < iterstop)
+            result := result + exponential(factorial(iterant),2)/factorial(2*iterant+1);
+            iterant := iterant + 1;
+        ENDWHILE
+        RETURN gosperConst*result;
+    END 
+     
+    FUNCTION INT main() 
+    BEGIN 
+        FLOAT i; 
+        FLOAT result;
+
+        gosperConst := 2.59808; 
+         
+        WRITE(intro);
+
+        WRITE(input1); 
+        READ(i); 
+        result := estPIGL(i); 
+        WRITE(result,eol);
+
+        WRITE(input2);
+        READ(i);
+        result := estPIEU(i);
+        WRITE(result,eol);
+
+        WRITE(input3);
+        READ(i);
+        result := estPIGO(i);
+        WRITE(result,eol); 
+    END 
+END

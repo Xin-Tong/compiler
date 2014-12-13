@@ -507,7 +507,7 @@ public:
             cur_LinkedNode ++;
             cout << "move " << val << " " << reg << endl;
             markDirty(reg);
-            if ((*cur_LinkedNode)->isleader())
+            if (cur_LinkedNode != (*cur_LinkedNodeVec).end() && (*cur_LinkedNode)->isleader())
             {
                 reset();
             }
@@ -547,7 +547,7 @@ public:
             cout << "pop " << reg << endl;
             markDirty(reg);
             cur_LinkedNode ++;
-            if ((*cur_LinkedNode)->isleader())
+            if (cur_LinkedNode != (*cur_LinkedNodeVec).end() && (*cur_LinkedNode)->isleader())
             {
                 reset();
             }
@@ -731,7 +731,7 @@ public:
         cout << oprtr << " "<< ir.op3 << endl; // op3 could be label name
         check(*cur_LinkedNode);
         cur_LinkedNode ++;
-        if ((*cur_LinkedNode)->isleader())
+        if (cur_LinkedNode != (*cur_LinkedNodeVec).end() && (*cur_LinkedNode)->isleader())
         {
             reset();
         }
@@ -843,7 +843,7 @@ public:
         
         check(*cur_LinkedNode);
         cur_LinkedNode ++;
-        if ((*cur_LinkedNode)->isleader())
+        if (cur_LinkedNode != (*cur_LinkedNodeVec).end() && (*cur_LinkedNode)->isleader())
         {
             reset();
         }
@@ -1253,7 +1253,7 @@ public:
         
         check(*cur_LinkedNode);
         cur_LinkedNode ++;
-        if ((*cur_LinkedNode)->isleader())
+        if (cur_LinkedNode != (*cur_LinkedNodeVec).end() && (*cur_LinkedNode)->isleader())
         {
             reset();
         }
@@ -1307,7 +1307,7 @@ public:
         
         check(*cur_LinkedNode);
         cur_LinkedNode ++;
-        if ((*cur_LinkedNode)->isleader())
+        if (cur_LinkedNode != (*cur_LinkedNodeVec).end() && (*cur_LinkedNode)->isleader())
         {
             reset();
         }
