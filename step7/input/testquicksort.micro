@@ -1,0 +1,205 @@
+PROGRAM quicksort
+BEGIN 
+    -- Quicksort for 10 elements array L0L
+    INT MAXLEN;
+    -- These are "array" locations
+    INT a0, a1, a2, a3, a4, a5, a6, a7, a8, a9;
+
+    STRING p0 := "Array: ";
+    STRING eol := "\n";
+    STRING sep := ", ";
+    STRING sorting := "Sorting..";
+    STRING parting := "Partiting..";
+    STRING input := "Input array value at A[";
+    STRING closebr := "]";
+    STRING eq := "=";
+
+    FUNCTION INT Aget(INT idx)
+    BEGIN  
+        -- Aget(0) will return a[0]
+        -- Aget(1) will return a[1] etc..
+        IF (idx = 0) 
+            RETURN a0;
+        ENDIF
+        IF (idx = 1) 
+            RETURN a1;
+        ENDIF
+        IF (idx = 2) 
+            RETURN a2;
+        ENDIF
+        IF (idx = 3) 
+            RETURN a3;
+        ENDIF
+        IF (idx = 4) 
+            RETURN a4;
+        ENDIF
+        IF (idx = 5) 
+            RETURN a5;
+        ENDIF
+        IF (idx = 6) 
+            RETURN a6;
+        ENDIF
+        IF (idx = 7) 
+            RETURN a7;
+        ENDIF
+        IF (idx = 8) 
+            RETURN a8;
+        ENDIF
+        IF (idx = 9) 
+            RETURN a9;
+        ENDIF
+    END
+
+    FUNCTION INT Aset(INT idx, INT val)
+    BEGIN
+        -- Aset(0, 1) will set a[0] := 1.. etc
+        -- Aset(1, 5) will set a[1] := 5
+        IF (idx = 0) 
+            a0 := val;
+        ENDIF
+        IF (idx = 1) 
+            a1 := val;
+        ENDIF
+        IF (idx = 2) 
+            a2 := val;
+        ENDIF
+        IF (idx = 3) 
+            a3 := val;
+        ENDIF
+        IF (idx = 4) 
+            a4 := val;
+        ENDIF
+        IF (idx = 5) 
+            a5 := val;
+        ENDIF
+        IF (idx = 6) 
+            a6 := val;
+        ENDIF
+        IF (idx = 7) 
+            a7 := val;
+        ENDIF
+        IF (idx = 8) 
+            a8 := val;
+        ENDIF
+        IF (idx = 9) 
+            a9 := val;
+        ENDIF
+        RETURN val;
+    END
+
+
+    FUNCTION INT printarray(INT tafix)
+    BEGIN
+        WRITE(p0);
+        WRITE(a0, sep);
+        WRITE(a1, sep);
+        WRITE(a2, sep);
+        WRITE(a3, sep);
+        WRITE(a4, sep);
+        WRITE(a5, sep);
+        WRITE(a6, sep);
+        WRITE(a7, sep);
+        WRITE(a8, sep);
+        WRITE(a9, sep);
+        RETURN 0;
+    END
+
+    FUNCTION INT Aswap(INT idxa, INT idxb)
+    BEGIN
+        INT vtemp, null;
+        INT q;
+        vtemp := Aget(idxa);
+        q := Aget(idxb);
+        null := Aset(idxa, q);
+        null := Aset(idxb, vtemp);
+        RETURN 0;
+    END
+
+    FUNCTION INT partition(INT i, INT f, INT pvt)
+    BEGIN
+        INT nextidx;
+        INT null, ix, Aix;
+        INT p;
+
+        p := Aget(pvt);
+
+        null := Aswap(pvt, f-1);
+        nextidx := i;  
+        ix := i;
+        WHILE (ix < f-1)
+            Aix := Aget(ix);
+            IF (Aix <= p)
+                null := Aswap(nextidx, ix);
+                nextidx := nextidx + 1;
+            ENDIF
+            ix := ix + 1;
+        ENDWHILE
+        null := Aswap(f-1, nextidx);
+        RETURN nextidx;
+    END
+
+    FUNCTION INT floorhalves(INT val)
+    BEGIN
+        INT q, min;
+        q := 1;
+        WHILE(q*2 < val)
+           q := q + 1;
+           IF(q*2 < val) 
+                min := q;
+           ENDIF     
+        ENDWHILE
+        RETURN min;
+    END
+
+    FUNCTION INT qsort(INT i, INT f)
+    BEGIN
+        INT dnull;
+        INT pvt;
+        WRITE(sorting, i, sep, f, eol);
+        IF (f-1 > i) 
+            pvt := i + floorhalves(f - i);
+            pvt := partition(i,f, pvt);
+            dnull := qsort(i, pvt);
+            dnull := qsort(pvt+1, f);
+        ENDIF
+        RETURN 0;
+    END
+
+    FUNCTION INT readinput(INT vta)
+    BEGIN
+        INT i;
+        INT temp;
+        INT null;
+        WHILE (i < vta) 
+            WRITE(input);
+            WRITE(i,closebr);
+            WRITE(eq);
+            READ(temp);
+            null := Aset(i, temp);
+            i := i + 1;
+        ENDWHILE
+        RETURN 0;
+    END
+
+    FUNCTION INT main() 
+    BEGIN 
+        INT res, null;
+        INT test;
+
+
+        MAXLEN := 10;
+
+        -- initialize array
+
+        null := readinput(MAXLEN);
+
+        null := printarray(5);
+
+        WRITE(eol, sorting, eol);
+
+        null := qsort(0, MAXLEN);
+
+        null := printarray(5);
+
+    END 
+END
