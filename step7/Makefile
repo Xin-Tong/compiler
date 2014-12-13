@@ -11,7 +11,7 @@ compiler:
 	yacc -d ./src/yacc.y
 	mv ./y.tab.c ./generated/
 	mv ./y.tab.h ./generated/	
-	g++ ./generated/lex.yy.c ./generated/y.tab.c ./src/symbol_table.h ./src/symbol_table.c -o ./build/Micro -ll
+	g++ ./generated/lex.yy.c -g ./generated/y.tab.c ./src/symbol_table.h ./src/symbol_table.c -o ./build/Micro -ll
 
 clean:
 	rm -rf build
