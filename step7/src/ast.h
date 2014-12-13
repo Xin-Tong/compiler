@@ -59,7 +59,8 @@ static string IR2Tiny(string ir)
     }
     else if(secondChar == "P")
     {
-        transfered_id = R_NUM + transfered_id;
+        //transfered_id = R_NUM + transfered_id;
+		transfered_id = 6 + pCurentSym->num_of_params - transfered_id;
         stringstream ss;
         ss << transfered_id;
         ss >> transfered;
